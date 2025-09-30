@@ -1,0 +1,62 @@
+{
+  "name": "tippy-like-boilerplate-vite",
+  "version": "0.1.0",
+  "description": "Boilerplate estilo Tippy.js con Vite: ESM/CJS/UMD, CSS separado y variante headless",
+  "type": "module",
+  "main": "dist/tippy.cjs.js",
+  "module": "dist/tippy.esm.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/tippy.esm.js",
+      "require": "./dist/tippy.cjs.js",
+      "default": "./dist/tippy.esm.js"
+    },
+    "./headless": {
+      "types": "./headless/dist/index.d.ts",
+      "import": "./headless/dist/tippy-headless.esm.js",
+      "require": "./headless/dist/tippy-headless.cjs.js",
+      "default": "./headless/dist/tippy-headless.esm.js"
+    },
+    "./style.css": "./dist/tippy.css",
+    "./umd": "./dist/tippy.umd.js",
+    "./umd-bundle": "./dist/tippy-bundle.umd.js"
+  },
+  "files": [
+    "dist",
+    "headless/dist"
+  ],
+  "sideEffects": [
+    "**/*.css",
+    "**/*.scss"
+  ],
+  "scripts": {
+    "dev": "vite -c vite.dev.config.ts",
+    "dev:visual:watch": "vite build -c vite.visual.build.config.ts --watch",
+    "build:lib": "vite build --mode libMain",
+    "build:lib:min": "vite build --mode libMainMin",
+    "build:bundle": "vite build --mode libBundle",
+    "build:bundle:min": "vite build --mode libBundleMin",
+    "build:headless": "vite build --mode headless",
+    "build:headless:umd": "vite build --mode headlessUmd",
+    "build:headless:umd:min": "vite build --mode headlessUmdMin",
+    "build": "rimraf dist headless/dist && npm run build:lib && npm run build:lib:min && npm run build:bundle && npm run build:bundle:min && npm run build:headless && npm run build:headless:umd && npm run build:headless:umd:min",
+    "prepublishOnly": "npm run build",
+    "types": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-legacy": "^5.4.2",
+    "cross-env": "^7.0.3",
+    "rimraf": "^6.0.1",
+    "sass-embedded": "^1.93.2",
+    "typescript": "^5.6.2",
+    "vite": "^7.1.7",
+    "vite-plugin-dts": "^4.3.0"
+  },
+  "dependencies": {
+    "@floating-ui/dom": "^1.6.9",
+    "@popperjs/core": "^2.11.8",
+    "@tailwindcss/vite": "^4.1.13",
+    "tailwindcss": "^4.1.13"
+  }
+}

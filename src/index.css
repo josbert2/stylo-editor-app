@@ -1,0 +1,99 @@
+/* v4: un solo import */
+@import "tailwindcss" prefix(cc);
+@source "./**/*";
+@source "../build/**/*";
+@source "../test/visual/**/*";
+
+
+
+/* Opcional: tu tema/tokens con @theme */
+@theme {
+  --color-avocado-500: oklch(0.84 0.18 117.33);
+  --font-display: "Satoshi", "sans-serif";
+  --breakpoint-3xl: 120rem;
+  --brand: #4c8bf5; 
+  --color-avocado-500: red;
+  --color-primary-bg: #121315;
+  --color-secondary-bg: #ffffff08;
+  --color-pikend-bg: #E9B3FB;
+}
+
+body{
+  background-color: rgb(35, 35, 35);
+}
+
+/* Tooltip Styles */
+.stylo-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.stylo-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.stylo-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 4px solid rgba(0, 0, 0, 0.9);
+}
+.stylo-tooltip.bottom::before {
+  top: -4px;
+  border-bottom: 4px solid rgba(0, 0, 0, 0.9);
+  border-top: none;
+}
+.stylo-tooltip.top::before {
+  top: auto;
+  bottom: -4px;
+  border-top: 4px solid rgba(0, 0, 0, 0.9);
+  border-bottom: none;
+}
+.stylo-tooltip.left::before {
+  top: 50%;
+  left: auto;
+  right: -4px;
+  transform: translateY(-50%);
+  border-left: 4px solid rgba(0, 0, 0, 0.9);
+  border-right: none;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+.stylo-tooltip.right::before {
+  top: 50%;
+  left: -4px;
+  right: auto;
+  transform: translateY(-50%);
+  border-right: 4px solid rgba(0, 0, 0, 0.9);
+  border-left: none;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+/* Hover effects for buttons with tooltips */
+[data-tooltip] {
+  position: relative;
+  transition: all 0.2s ease;
+}
+[data-tooltip]:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}

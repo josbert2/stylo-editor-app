@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Tippy-like Boilerplate (CDN)</title>
+    <link rel="stylesheet" href="../dist/tippy.css" />
+    <style>
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+    </style>
+  </head>
+  <body>
+    <h1>UMD + CSS externo</h1>
+    <div id="app" class="demo">
+      <div class="demo__title">Boilerplate listo</div>
+      <div id="result"></div>
+    </div>
+
+    <script src="../dist/tippy-bundle.umd.js"></script>
+    <script>
+      // UMD global: window.tippy
+      const res = window.tippy.hello({ name: "Node/NPM" });
+      document.getElementById("result").textContent = res;
+    </script>
+  </body>
+</html>

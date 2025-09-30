@@ -1,0 +1,74 @@
+
+body{
+  background-color: #121315;
+}
+
+body::before {
+    --size: 45px;
+    --line: color-mix(in hsl, canvasText, transparent 93%);
+    content: '';
+    height: 100vh;
+    width: 100vw;
+    position: fixed;
+    background: linear-gradient(
+          90deg,
+          var(--line) 1px,
+          transparent 1px var(--size)
+        )
+        calc(var(--size) * 0.36) 50% / var(--size) var(--size),
+      linear-gradient(var(--line) 1px, transparent 1px var(--size)) 0%
+        calc(var(--size) * 0.32) / var(--size) var(--size);
+    mask: linear-gradient(-20deg, transparent 50%, white);
+    top: 0;
+    transform-style: flat;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+:root { 
+  --brand: #4c8bf5; 
+  --color-avocado-500: red;
+  --color-primary-bg: #121315;
+  --color-secondary-bg: #ffffff08;
+  --color-pikend-bg: #E9B3FB;
+}
+
+.demo {
+  font-family: system-ui, sans-serif;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  display: inline-block;
+  margin: 8px 0;
+
+  &__title {
+    font-weight: 600;
+    color: var(--brand);
+  }
+}
+
+.minimized-panel{
+  background-size: 200% 100%;
+  background-image: linear-gradient(110deg, #000103, 45%, #1e2631, 55%, #000103);
+}
+
+
+.bg-\[linear-gradient\(110deg\,\#000103\,45\%\,\#1e2631\,55\%\,\#000103\)\] {
+    background-image: linear-gradient(110deg, #000103, 45%, #1e2631, 55%, #000103);
+}
+
+.bg-primary-bg {
+  background-color: var(--color-primary-bg);
+}
+.border-secondary-bg {
+  border-color: var(--color-secondary-bg);
+}
+.border {
+  border-style: solid;
+  border-width: 1px;
+}
+
+.border {
+  border-style: solid;
+  border-width: 1px;
+}
