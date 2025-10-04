@@ -10,6 +10,7 @@ import type {
 import { AssetIcon } from '../icons';
 import { TooltipManager } from './TooltipManager';
 import { ScrollArea } from './ScrollArea';
+import { Dock } from './Dock';
 
 export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private container: HTMLElement;
@@ -24,6 +25,7 @@ export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private styleValues: StyleValues | null = null;
   private logoApp: HTMLElement | null = null;
   private scrollArea: ScrollArea | null = null;
+  private dock: Dock | null = null;
   
   // Propiedades para mejorar el drag
   private dragThrottleId: number | null = null;
@@ -39,6 +41,11 @@ export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
     this.container = container;
     this.isMinimized = options.minimized ?? true;
     this.position = options.position || { x: 20, y: 20 };
+    
+    // Crear el dock
+    this.dock = new Dock(container);
+    this.bindDockEvents();
+    
     this.createLogoApp();
     this.createPanel();
    
@@ -201,12 +208,7 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
         </div>
         
         <div style="display: flex; align-items: center; gap: 4px;">
-          <button class="inspector-toggle-btn 
-          cc:flex cc:justify-center
-           cc:items-center cc:w-7 cc:h-7 
-           cc:text-white cc:rounded cc:shadow-sm 
-           cc:transition-colors cc:duration-200 cc:cursor-pointer 
-           cc:bg-secondary-bg cc:hover:bg-pikend-bg/20 title="Activate Inspector"
+          <button class="inspector-toggle-btn cc:flex cc:justify-center cc:items-center cc:w-7 cc:h-7 cc:text-white cc:rounded cc:shadow-sm cc:transition-colors cc:duration-200 cc:cursor-pointer cc:bg-secondary-bg cc:hover:bg-pikend-bg/20" title="Activate Inspector"
             data-tooltip="Texto del tooltip"
             data-tooltip-position="bottom"
            >
@@ -772,6 +774,11 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     this.clearTooltips();
     this.isMinimized = true;
     
+    // Ocultar el dock cuando se minimiza el panel
+    if (this.dock) {
+      this.dock.hide();
+    }
+    
     if (this.panelElement) {
       // Remover color de fondo específico al minimizar y aplicar gradiente
       this.panelElement.style.backgroundColor = '';
@@ -828,6 +835,12 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
   expand(): void {
     this.clearTooltips();
     this.isMinimized = false;
+    
+    // Mostrar el dock cuando se maximiza el panel
+    if (this.dock) {
+      this.dock.show();
+      this.dock.setActiveTab(this.activeTab);
+    }
     
     if (this.panelElement) {
       // Aplicar color de fondo específico cuando está abierto y remover gradiente
@@ -923,7 +936,15 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
    * Establecer pestaña activa
    */
   setActiveTab(tab: TabType): void {
+    if (this.activeTab === tab) return;
+    
     this.activeTab = tab;
+    
+    // Sincronizar con el dock
+    if (this.dock) {
+      this.dock.setActiveTab(tab);
+    }
+    
     this.renderContent();
     this.emit('tab:changed', tab);
   }
@@ -971,6 +992,76 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
   }
 
   /**
+   * Vincular eventos del dock
+   */
+  private bindDockEvents(): void {
+    if (!this.dock) return;
+
+    // Sincronizar tab activo entre panel y dock
+    this.dock.on('dock:tab-changed', (tab: TabType) => {
+      this.setActiveTab(tab);
+    });
+
+    // Ocultar dock
+    this.dock.on('dock:hide', () => {
+      // El dock se oculta automáticamente
+    });
+
+    // Toggle inspector desde el dock
+    this.dock.on('dock:inspector-toggle', () => {
+      // Aquí puedes agregar lógica adicional si es necesario
+      this.emit('dock:inspector-action');
+    });
+
+    // Manejar aplicación de colores
+    this.dock.on('dock:color-applied', (color: string) => {
+      this.applyColorToSelectedElement(color);
+    });
+  }
+
+  private applyColorToSelectedElement(color: string): void {
+    if (!this.selectedElement) {
+      console.warn('No hay elemento seleccionado para aplicar el color');
+      return;
+    }
+    
+    // Aplicar el color como color de texto por defecto
+    // En el futuro se puede expandir para permitir elegir qué propiedad modificar
+    this.selectedElement.style.color = color;
+    
+    // Emitir evento para notificar el cambio
+    this.emit('element:style-changed', {
+      element: this.selectedElement,
+      property: 'color',
+      value: color
+    });
+    
+    // Actualizar la vista del panel si está expandido
+    if (!this.isMinimized) {
+      this.renderContent();
+    }
+  }
+
+  /**
+   * Métodos públicos para controlar el dock
+   */
+  public getDock(): Dock | null {
+    return this.dock;
+  }
+
+  public showDock(): void {
+    if (this.dock) {
+      this.dock.show();
+    }
+  }
+
+  public hideDock(): void {
+    if (this.dock) {
+      this.dock.hide();
+    }
+  }
+
+  /**
    * Destruir el panel
    */
   override destroy(): void {
@@ -978,6 +1069,12 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     if (this.scrollArea) {
       this.scrollArea.destroy();
       this.scrollArea = null;
+    }
+    
+    // Limpiar Dock
+    if (this.dock) {
+      this.dock.destroy();
+      this.dock = null;
     }
     
     if (this.panelElement) {

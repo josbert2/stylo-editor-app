@@ -87,7 +87,7 @@ export class ScrollArea {
     this.thumb.className = 'scroll-area-thumb';
     this.thumb.setAttribute('data-slot', 'scroll-area-thumb');
     this.thumb.style.cssText = `
-      background-color: rgba(255, 255, 255, 0.2);
+      
       position: relative;
       flex: 1;
       border-radius: 9999px;

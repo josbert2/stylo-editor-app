@@ -159,4 +159,9 @@ export interface StyloEditorEvents {
   'styles:updated': StyleValues;
   'tab:changed': TabType;
   'panel:minimized': boolean;
+  'eyedropper:activated': void;
+  'eyedropper:deactivated': void;
+  'eyedropper:color-picked': string;
+  'dock:eyedropper': void;
+  'dock:color-applied': string;
 }

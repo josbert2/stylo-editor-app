@@ -107,3 +107,13 @@ body{
    width: 52px !important;
   height: 52px !important;
 }
+
+.scroll-area-root {
+  height: 100%;
+  width: 100%;
+}
+.color-grid{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
