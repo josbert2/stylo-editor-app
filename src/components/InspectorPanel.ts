@@ -9,6 +9,7 @@ import type {
 
 import { AssetIcon } from '../icons';
 import { TooltipManager } from './TooltipManager';
+import { ScrollArea } from './ScrollArea';
 
 export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private container: HTMLElement;
@@ -22,6 +23,7 @@ export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private elementInfo: ElementInfo | null = null;
   private styleValues: StyleValues | null = null;
   private logoApp: HTMLElement | null = null;
+  private scrollArea: ScrollArea | null = null;
   
   // Propiedades para mejorar el drag
   private dragThrottleId: number | null = null;
@@ -139,26 +141,24 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     this.panelElement = document.createElement('div');
     // flex justify-between items-center px-3 w-full h-full rounded border backdrop-blur-md transition-colors select-none cursor-grab active:cursor-grabbing bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] border-secondary-bg group hover:bg-primary-bg/90
     this.panelElement.className = 'stylo-panel';
-    this.panelElement.classList.add('cc:flex', 'cc:justify-between', 'cc:items-center', 'cc:px-3', 'cc:w-full', 'cc:h-full', 'cc:rounded', 'cc:border', 'cc:backdrop-blur-md', 'cc:transition-colors', 'cc:select-none', 'cc:cursor-grab', 'cc:active:cursor-grabbing', 'cc:bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)]', 'cc:bg-[length:200%_100%]', 'cc:border-secondary-bg', 'cc:group', 'cc:hover:bg-primary-bg/90');
+    this.panelElement.classList.add('cc:flex', 'cc:justify-between', 'cc:items-center',  'cc:w-full', 'cc:h-full', 'cc:rounded', 'cc:border', 'cc:backdrop-blur-md', 'cc:transition-colors', 'cc:select-none', 'cc:cursor-grab', 'cc:active:cursor-grabbing', 'cc:bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)]', 'cc:bg-[length:200%_100%]', 'cc:border-secondary-bg', 'cc:group', 'cc:hover:bg-primary-bg/90');
     this.panelElement.style.cssText = `
       position: fixed;
       left: ${this.position.x}px;
       top: ${this.position.y}px;
-      width: ${this.isMinimized ? '400px' : '320px'};
-      height: ${this.isMinimized ? '44px' : '400px'};
-      min-width: ${this.isMinimized ? '200px' : '320px'};
+      width: ${this.isMinimized ? '200px' : '400px'};
+      height: ${this.isMinimized ? '44px' : 'calc(100vh - 40px)'};
+      min-width: ${this.isMinimized ? '200px' : '400px'};
       min-height: ${this.isMinimized ? '44px' : '400px'};
-      max-width: ${this.isMinimized ? '300px' : '90vw'};
-      max-height: ${this.isMinimized ? '44px' : '90vh'};
-     
+      max-width: ${this.isMinimized ? '300px' : 'calc(100vw - 40px)'};
+      max-height: ${this.isMinimized ? '44px' : 'calc(100vh - 40px)'};
       border-radius: 8px;
-
       z-index: 9999;
       color: white;
       resize: ${this.isMinimized ? 'none' : 'both'};
       overflow: hidden;
       transition: box-shadow 0.2s ease, transform 0.1s ease;
-      will-change: left, top;
+      will-change: left, top, box-shadow;
       user-select: none;
     `;
 
@@ -186,7 +186,7 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     if (!this.panelElement) return;
 
     this.panelElement.innerHTML = `
-      <div class="minimized-panel" style="
+      <div class="minimized-panel cc:px-3" style="
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -234,18 +234,33 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
         padding: 12px;
         border-bottom: 1px solid #333;
         cursor: grab;
-        background: linear-gradient(135deg, #4AEDFF 0%, #B794F6 100%);
+        position: relative;
         border-radius: 8px 8px 0 0;
       " data-drag-handle>
+        <!-- Drag Handle -->
+        <div class="absolute top-2 left-1/2 z-10 w-8 h-1 bg-gray-600 rounded-full transition-colors transform -translate-x-1/2 drag-handle cursor-grab hover:bg-gray-500" style="
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          z-index: 10;
+          width: 32px;
+          height: 4px;
+          background-color: #4b5563;
+          border-radius: 9999px;
+          transition: background-color 0.2s ease;
+          transform: translateX(-50%);
+          cursor: grab;
+        " onmouseover="this.style.backgroundColor='#6b7280'" onmouseout="this.style.backgroundColor='#4b5563'"></div>
+        
         <div style="display: flex; align-items: center; gap: 8px;">
-          <div style="
-            width: 28px;
-            height: 28px;
+          <div class="logo-svg-app" style="
+            width: 52px;
+            height: 52px;
             display: flex;
             align-items: center;
             justify-content: center;
           ">${this.logoApp ? this.logoApp.innerHTML : 'S'}</div>
-          <span style="font-size: 16px; font-weight: 600; color: white;">Stylo Editor</span>
+          
         </div>
         
         <div style="display: flex; align-items: center; gap: 4px;">
@@ -336,8 +351,37 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     this.panelElement.innerHTML = `
       ${this.renderPanelHeader()}
       ${this.renderPanelTabs()}
-      ${this.renderPanelContent()}
+      <div class="panel-content-container" style="
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      "></div>
     `;
+
+    // Crear el ScrollArea para el contenido
+    const contentContainer = this.panelElement.querySelector('.panel-content-container') as HTMLElement;
+    if (contentContainer) {
+      // Limpiar ScrollArea anterior si existe
+      if (this.scrollArea) {
+        this.scrollArea.destroy();
+      }
+      
+      // Crear nuevo ScrollArea
+      this.scrollArea = new ScrollArea(contentContainer, {
+        className: 'panel-scroll-area',
+        orientation: 'vertical'
+      });
+
+      // Agregar el contenido al ScrollArea
+      const contentDiv = document.createElement('div');
+      contentDiv.style.cssText = `
+        padding: 16px;
+        min-height: 100%;
+      `;
+      contentDiv.innerHTML = this.renderTabContent();
+      
+      this.scrollArea.appendChild(contentDiv);
+    }
   }
 
   /**
@@ -530,11 +574,14 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
       y: e.clientY - rect.top
     };
 
-    // Efectos visuales
+    // Limpiar cualquier transición compleja que pueda interferir con el drag
+    this.panelElement.style.transition = 'none';
+    this.panelElement.style.transform = 'none';
+    this.panelElement.style.filter = 'none';
+    
+    // Efectos visuales simples para drag
     this.panelElement.style.cursor = 'grabbing';
-    this.panelElement.style.transform = 'scale(1.02)';
     this.panelElement.style.zIndex = '10000';
-    this.panelElement.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.5)';
 
     e.preventDefault();
   }
@@ -701,11 +748,12 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
 
     this.isDragging = false;
 
-    // Restaurar efectos visuales
+    // Restaurar efectos visuales simples
     this.panelElement.style.cursor = 'grab';
-    this.panelElement.style.transform = 'scale(1)';
     this.panelElement.style.zIndex = '9999';
-    this.panelElement.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3)';
+    
+    // Restaurar transición básica para el panel
+    this.panelElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
 
     // Al soltar, auto-posicionar a la esquina más cercana
     this.snapToNearestCorner();
@@ -721,9 +769,56 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
    * Minimizar el panel
    */
   minimize(): void {
+    this.clearTooltips();
     this.isMinimized = true;
-    this.updatePanelDimensions();
-    this.renderContent();
+    
+    if (this.panelElement) {
+      // Remover color de fondo específico al minimizar y aplicar gradiente
+      this.panelElement.style.backgroundColor = '';
+      this.panelElement.style.backgroundImage = 'linear-gradient(110deg, #000103, 45%, #1e2631, 55%, #000103)';
+      
+      // Configurar transición suave para la minimización
+      this.panelElement.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      
+      // Animación inicial: scale down con fade
+      this.panelElement.style.transform = 'scale(0.95) translateY(2px)';
+      this.panelElement.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)';
+      this.panelElement.style.filter = 'brightness(0.9)';
+      
+      // Aplicar nuevas dimensiones con delay para sincronizar
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          this.updatePanelDimensions();
+          
+          // Renderizar contenido minimizado
+          setTimeout(() => {
+            this.renderContent();
+          }, 50);
+          
+        }, 50);
+        
+        // Efecto de "settle" suave
+        setTimeout(() => {
+          if (this.panelElement) {
+            this.panelElement.style.transform = 'scale(1.02) translateY(-1px)';
+            this.panelElement.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05)';
+          }
+        }, 200);
+        
+        // Estado final estable - IMPORTANTE: limpiar propiedades de animación
+        setTimeout(() => {
+          if (this.panelElement) {
+            this.panelElement.style.transform = 'none';
+            this.panelElement.style.boxShadow = '';
+            this.panelElement.style.filter = 'none';
+            // Restaurar transición normal para drag suave
+            this.panelElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+          }
+        }, 400);
+      });
+    }
+    
+    // Emitir evento
     this.emit('panel:minimized', true);
   }
 
@@ -731,10 +826,74 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
    * Expandir el panel
    */
   expand(): void {
+    this.clearTooltips();
     this.isMinimized = false;
-    this.updatePanelDimensions();
-    this.renderContent();
+    
+    if (this.panelElement) {
+      // Aplicar color de fondo específico cuando está abierto y remover gradiente
+      this.panelElement.style.backgroundColor = '#121315';
+      this.panelElement.style.backgroundImage = 'none';
+      
+      // Configurar transición suave para la expansión
+      this.panelElement.style.transition = 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      
+      // Animación inicial: pequeño scale up con glow
+      this.panelElement.style.transform = 'scale(1.05) translateY(-2px)';
+      this.panelElement.style.boxShadow = '0 25px 80px rgba(74, 237, 255, 0.4), 0 0 0 1px rgba(74, 237, 255, 0.2)';
+      this.panelElement.style.filter = 'brightness(1.1)';
+      
+      // Aplicar nuevas dimensiones con delay para sincronizar
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          this.updatePanelDimensions();
+          
+          // Animación de "breathing" durante la expansión
+          this.panelElement!.style.transform = 'scale(1.02) translateY(-1px)';
+          
+          // Renderizar contenido mientras se expande
+          setTimeout(() => {
+            this.renderContent();
+          }, 100);
+          
+        }, 50);
+        
+        // Efecto de settle final con bounce suave
+        setTimeout(() => {
+          if (this.panelElement) {
+            this.panelElement.style.transform = 'scale(0.98) translateY(1px)';
+            this.panelElement.style.boxShadow = '0 15px 40px rgba(74, 237, 255, 0.25), 0 0 0 1px rgba(74, 237, 255, 0.1)';
+          }
+        }, 300);
+        
+        // Estado final estable - IMPORTANTE: limpiar propiedades de animación
+        setTimeout(() => {
+          if (this.panelElement) {
+            this.panelElement.style.transform = 'none';
+            this.panelElement.style.boxShadow = '';
+            this.panelElement.style.filter = 'none';
+            // Restaurar transición normal para drag suave
+            this.panelElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+          }
+        }, 500);
+      });
+    }
+    
+    // Emitir evento
     this.emit('panel:minimized', false);
+  }
+
+  /**
+   * Limpiar tooltips activos para evitar bugs al cambiar el estado del panel
+   */
+  private clearTooltips(): void {
+    // Obtener la instancia del TooltipManager y forzar el ocultado del tooltip
+    const tooltipManager = TooltipManager.getInstance();
+    if (tooltipManager && (tooltipManager as any).tooltip) {
+      const tooltip = (tooltipManager as any).tooltip;
+      tooltip.classList.remove('show');
+      // Limpiar timeouts
+      (tooltipManager as any).clearTimeouts();
+    }
   }
 
   /**
@@ -743,12 +902,12 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
   private updatePanelDimensions(): void {
     if (!this.panelElement) return;
     
-    const width = this.isMinimized ? '200px' : '320px';
-    const height = this.isMinimized ? '44px' : '400px';
-    const minWidth = this.isMinimized ? '200px' : '320px';
+    const width = this.isMinimized ? '200px' : '400px';
+    const height = this.isMinimized ? '44px' : 'calc(100vh - 40px)'; // Altura completa con 20px gap
+    const minWidth = this.isMinimized ? '200px' : '400px';
     const minHeight = this.isMinimized ? '44px' : '400px';
-    const maxWidth = this.isMinimized ? '300px' : '90vw';
-    const maxHeight = this.isMinimized ? '44px' : '90vh';
+    const maxWidth = this.isMinimized ? '300px' : 'calc(100vw - 40px)'; // 20px padding en cada lado
+    const maxHeight = this.isMinimized ? '44px' : 'calc(100vh - 40px)'; // 20px padding arriba y abajo
     const resize = this.isMinimized ? 'none' : 'both';
     
     this.panelElement.style.width = width;
@@ -815,6 +974,12 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
    * Destruir el panel
    */
   override destroy(): void {
+    // Limpiar ScrollArea
+    if (this.scrollArea) {
+      this.scrollArea.destroy();
+      this.scrollArea = null;
+    }
+    
     if (this.panelElement) {
       this.panelElement.remove();
       this.panelElement = null;

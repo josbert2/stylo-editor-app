@@ -107,6 +107,28 @@ export class TooltipManager {
     return null;
   }
 
+  /**
+   * Limpiar todos los timeouts activos
+   */
+  private clearTimeouts(): void {
+    if (this.showTimeout) {
+      clearTimeout(this.showTimeout);
+      this.showTimeout = null;
+    }
+    if (this.hideTimeout) {
+      clearTimeout(this.hideTimeout);
+      this.hideTimeout = null;
+    }
+  }
+
+  /**
+   * Método público para forzar el ocultamiento del tooltip
+   */
+  public forceHide(): void {
+    this.clearTimeouts();
+    this.hideTooltip();
+  }
+
   private showTooltip(element: HTMLElement, text: string): void {
     if (!this.tooltip) return;
 
@@ -218,16 +240,5 @@ export class TooltipManager {
     
     this.tooltip.style.left = `${left}px`;
     this.tooltip.style.top = `${top}px`;
-  }
-
-  private clearTimeouts(): void {
-    if (this.showTimeout) {
-      clearTimeout(this.showTimeout);
-      this.showTimeout = null;
-    }
-    if (this.hideTimeout) {
-      clearTimeout(this.hideTimeout);
-      this.hideTimeout = null;
-    }
   }
 }

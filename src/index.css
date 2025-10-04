@@ -97,3 +97,13 @@ body{
   transform: translateY(-1px);
   filter: brightness(1.1);
 }
+
+.logo-svg-app svg{
+  width: 52px !important;
+  height: 52px !important;
+}
+
+.logo-svg-app{
+   width: 52px !important;
+  height: 52px !important;
+}
