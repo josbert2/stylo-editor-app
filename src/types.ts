@@ -109,7 +109,7 @@ export interface EditableValues {
   rotate: { value: string; unit: string };
 }
 
-// Tipos combinados para estilos
+// Tipos para valores de estilo
 export interface StyleValues {
   spacing: SpacingValues;
   typography: TypographyValues;
@@ -122,7 +122,7 @@ export interface StyleValues {
   editable: EditableValues;
 }
 
-// Tipos para información de elementos
+// Tipos para información del elemento
 export interface ElementInfo {
   tagName: string;
   id?: string;
@@ -143,12 +143,43 @@ export interface PropertySection {
   expanded: boolean;
 }
 
-// Tipos para tabs y panel
+// Tipos para pestañas
 export type TabType = 'design' | 'code' | 'html' | 'chat';
 
 export interface PanelOptions {
   minimized?: boolean;
   position?: { x: number; y: number };
+}
+
+// Tipos para Asset Manager
+export interface AssetFile {
+  id: string;
+  name: string;
+  type: 'image' | 'video' | 'audio' | 'document' | 'font' | 'other';
+  url: string;
+  size: number;
+  mimeType: string;
+  dimensions?: { width: number; height: number };
+  uploadedAt: Date;
+  tags: string[];
+  folder?: string;
+}
+
+export interface AssetFolder {
+  id: string;
+  name: string;
+  parentId?: string;
+  createdAt: Date;
+}
+
+export interface AssetManagerOptions {
+  onAssetSelected?: (asset: AssetFile) => void;
+  onAssetUploaded?: (asset: AssetFile) => void;
+  onAssetDeleted?: (assetId: string) => void;
+  allowedTypes?: string[];
+  maxFileSize?: number;
+  showUpload?: boolean;
+  showFolders?: boolean;
 }
 
 // Tipos para eventos
@@ -164,4 +195,14 @@ export interface StyloEditorEvents {
   'eyedropper:color-picked': string;
   'dock:eyedropper': void;
   'dock:color-applied': string;
+  'dock:ruler': void;
+  'dock:assets': void;
+  'ruler:activated': void;
+  'ruler:deactivated': void;
+  'ruler:measurement': any; // RulerMeasurement from Ruler component
+  'asset:selected': AssetFile;
+  'asset:uploaded': AssetFile;
+  'asset:deleted': string;
+  'asset-manager:opened': void;
+  'asset-manager:closed': void;
 }

@@ -3,6 +3,8 @@ import type { StyloEditorEvents, TabType } from '../types';
 import { TooltipManager } from './TooltipManager';
 import { ColorPalette } from './ColorPalette';
 import { ColorDropper } from './ColorDropper';
+import { Ruler } from './Ruler';
+import { AssetManager } from './AssetManager';
 
 export class Dock extends EventEmitter<StyloEditorEvents> {
   private container: HTMLElement;
@@ -12,6 +14,8 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   private isPaused: boolean = false;
   private colorPalette: ColorPalette | null = null;
   private colorDropper: ColorDropper | null = null;
+  private ruler: Ruler | null = null;
+  private assetManager: AssetManager | null = null;
 
   constructor(container: HTMLElement) {
     super();
@@ -387,10 +391,10 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
         this.emit('dock:html-navigator');
         break;
       case 'assets':
-        this.emit('dock:assets');
+        this.toggleAssetManager();
         break;
       case 'ruler':
-        this.emit('dock:ruler');
+        this.toggleRuler();
         break;
       case 'color-palette':
         this.toggleColorPalette();
@@ -515,20 +519,8 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     if (this.colorDropper.isActivated()) {
       this.colorDropper.deactivate();
     } else {
-      // Intentar usar la API nativa primero
-      if ('EyeDropper' in window) {
-        this.colorDropper.useNativeEyeDropper().then((color) => {
-          if (color) {
-            this.emit('dock:color-applied', color);
-          }
-        }).catch(() => {
-          // Si falla, usar el fallback manual
-          this.colorDropper?.activate();
-        });
-      } else {
-        // Usar el método manual
-        this.colorDropper.activate();
-      }
+      // Usar el método correcto para activar el color dropper
+      this.colorDropper.activate();
     }
   }
 
@@ -545,6 +537,135 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
         eyedropperBtn.classList.remove('active');
         eyedropperBtn.style.background = 'rgba(255, 255, 255, 0.1)';
         eyedropperBtn.style.color = 'rgba(255, 255, 255, 0.7)';
+      }
+    }
+  }
+
+  private toggleRuler(): void {
+    if (!this.ruler) {
+      // Crear instancia del ruler
+      this.ruler = new Ruler(this.container, {
+        onActivated: () => {
+          console.log('Dock: Ruler activado');
+          this.updateRulerButtonState(true);
+        },
+        onDeactivated: () => {
+          console.log('Dock: Ruler desactivado');
+          this.updateRulerButtonState(false);
+        },
+        onMeasurement: (measurement) => {
+          console.log('Dock: Nueva medición:', measurement);
+          // Emitir evento para que otros componentes puedan reaccionar
+          this.emit('dock:ruler-measurement', measurement);
+        },
+        units: 'px',
+        showGrid: false,
+        snapToElements: true
+      });
+
+      // Escuchar eventos del ruler
+      this.ruler.on('ruler:activated', () => {
+        this.emit('dock:ruler');
+      });
+
+      this.ruler.on('ruler:deactivated', () => {
+        // Ruler desactivado - asegurar que el botón se actualice
+        this.updateRulerButtonState(false);
+      });
+    }
+
+    // Toggle del ruler
+    if (this.ruler.isActivated()) {
+      // Intentar desactivación normal primero
+      this.ruler.deactivate();
+      
+      // Si sigue activo después de 100ms, forzar desactivación
+      setTimeout(() => {
+        if (this.ruler?.isActivated()) {
+          console.warn('Dock: Forzando desactivación del Ruler');
+          this.ruler.forceDeactivate();
+        }
+      }, 100);
+    } else {
+      // Desactivar otras herramientas primero
+      if (this.colorDropper?.isActivated()) {
+        this.colorDropper.deactivate();
+      }
+      
+      this.ruler.activate();
+    }
+  }
+
+  private updateRulerButtonState(active: boolean): void {
+    const rulerButton = this.dockElement?.querySelector('[data-action="ruler"]') as HTMLElement;
+    if (rulerButton) {
+      if (active) {
+        rulerButton.style.background = 'rgba(0, 123, 255, 0.3)';
+        rulerButton.style.color = '#007bff';
+        rulerButton.style.transform = 'scale(1.05)';
+      } else {
+        rulerButton.style.background = 'rgba(255, 255, 255, 0.1)';
+        rulerButton.style.color = 'rgba(255, 255, 255, 0.7)';
+        rulerButton.style.transform = 'scale(1)';
+      }
+    }
+  }
+
+  private toggleAssetManager(): void {
+    if (!this.assetManager) {
+      this.assetManager = new AssetManager(this.container);
+      
+      // Escuchar eventos del Asset Manager
+      this.assetManager.on('asset:selected', (asset) => {
+        this.emit('asset:selected', asset);
+      });
+      
+      this.assetManager.on('asset:uploaded', (asset) => {
+        this.emit('asset:uploaded', asset);
+      });
+      
+      this.assetManager.on('asset:deleted', (assetId) => {
+        this.emit('asset:deleted', assetId);
+      });
+      
+      this.assetManager.on('asset-manager:opened', () => {
+        this.updateAssetManagerButtonState(true);
+        this.emit('asset-manager:opened');
+      });
+      
+      this.assetManager.on('asset-manager:closed', () => {
+        this.updateAssetManagerButtonState(false);
+        this.emit('asset-manager:closed');
+      });
+    }
+
+    if (this.assetManager.isOpen()) {
+      this.assetManager.hide();
+    } else {
+      // Cerrar otras herramientas activas
+      if (this.colorPalette?.isShown()) {
+        this.colorPalette.hide();
+      }
+      if (this.colorDropper?.isActivated()) {
+        this.colorDropper.deactivate();
+      }
+      if (this.ruler?.isActivated()) {
+        this.ruler.deactivate();
+      }
+      
+      this.assetManager.show();
+    }
+  }
+
+  private updateAssetManagerButtonState(active: boolean): void {
+    const assetBtn = this.dockElement?.querySelector('[data-action="assets"]') as HTMLElement;
+    if (assetBtn) {
+      if (active) {
+        assetBtn.style.background = 'rgba(0, 122, 204, 0.2)';
+        assetBtn.style.color = '#007acc';
+      } else {
+        assetBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+        assetBtn.style.color = 'rgba(255, 255, 255, 0.7)';
       }
     }
   }
@@ -613,6 +734,11 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   }
 
   public destroy(): void {
+    if (this.ruler) {
+      this.ruler.destroy();
+      this.ruler = null;
+    }
+    
     if (this.colorPalette) {
       this.colorPalette.destroy();
       this.colorPalette = null;
@@ -621,6 +747,11 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     if (this.colorDropper) {
       this.colorDropper.destroy();
       this.colorDropper = null;
+    }
+    
+    if (this.assetManager) {
+      this.assetManager.destroy();
+      this.assetManager = null;
     }
 
     if (this.dockElement) {

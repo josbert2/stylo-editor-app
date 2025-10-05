@@ -91,6 +91,27 @@ export class StyloEditor extends EventEmitter<StyloEditorEvents> {
       this.updateFloatingInstructions();
       this.emit('panel:minimized', minimized);
     });
+
+    // Eventos del Asset Manager (desde el Dock a través del InspectorPanel)
+    this.inspectorPanel.on('asset:selected', (asset) => {
+      this.emit('asset:selected', asset);
+    });
+
+    this.inspectorPanel.on('asset:uploaded', (asset) => {
+      this.emit('asset:uploaded', asset);
+    });
+
+    this.inspectorPanel.on('asset:deleted', (assetId) => {
+      this.emit('asset:deleted', assetId);
+    });
+
+    this.inspectorPanel.on('asset-manager:opened', () => {
+      this.emit('asset-manager:opened');
+    });
+
+    this.inspectorPanel.on('asset-manager:closed', () => {
+      this.emit('asset-manager:closed');
+    });
   }
 
   /**
