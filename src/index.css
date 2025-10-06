@@ -177,3 +177,173 @@ body{
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+.stylo-dock{
+  --container-border-color: rgb(255 255 255 / 8%);
+  --bg-container: hsl(0deg 0% 10%);
+  --container-box-shadow-color: rgb(0 0 0 / 80%);
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: 60px;
+ 
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
+}
+.dock-container{
+   --button-shadow-opacity: 0;
+  --button-shadow-spread: 0;
+  --button-bg-opacity: 0;
+  --button-after-opacity: 0;
+  --btn-border-color: rgb(255 255 255 / 5%);
+  --bg-container: hsl(0deg 0% 10%);
+  --bg-button: var(--bg-container);
+  cursor: pointer;
+  color: var(--color-button);
+  font-weight: 600;
+  box-shadow: 0 6px 12px -6px var(--container-box-shadow-color);
+  background: var(--bg-container);
+  border: 1px solid var(--container-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  
+  transition: var(--transitions);
+  border-radius: 48px;
+}
+.dock-container .dock-main-controls{
+ 
+    background: var(--bg-button);
+    padding: 0 9px;
+    height: 65px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    grid-gap: 12px;
+    box-shadow: inset 0 calc(var(--btn-inner-shadow) * 2px) calc(var(--btn-inner-shadow) * 1px) rgba(255, 255, 255, 0.9), inset 0 calc(var(--btn-inner-shadow) * -2px) calc(var(--btn-inner-shadow) * 3px) rgba(0, 0, 0, 0.03);
+}
+.dock-container .dock-main-controls{
+    box-shadow: inset 0 calc(var(--btn-inner-shadow) * 2px) calc(var(--btn-inner-shadow) * 3px) rgba(255, 255, 255, 0.01), inset 0 calc(var(--btn-inner-shadow) * -2px) calc(var(--btn-inner-shadow) * 3px) rgba(0, 0, 0, 0.25);
+}
+
+
+.button-btn-fancy {
+  --context-bg: hsl(0deg 0% 8%);
+  --bg-container: hsl(0deg 0% 10%);
+  --bg-button: var(--bg-container);
+  --color-button: hsl(0deg 0% 66%);
+  --btn-border-color: rgb(255 255 255 / 5%);
+  --btn-inner-shadow: 1;
+  --btn-border-size: 1;
+  --container-border-color: rgb(255 255 255 / 8%);
+  --container-box-shadow-color: rgb(0 0 0 / 80%);
+  --debug: 0;
+  
+ 
+  --button-shadow-opacity: 0;
+  --button-shadow-spread: 0;
+  --button-bg-opacity: 0;
+  --button-after-opacity: 0;
+
+
+
+  --timing: .3s;
+  --transitions: --coord-y .075s 
+  linear, --coord-x .075s 
+  linear, --button-shadow-opacity var(--timing) 
+  ease, --button-shadow-spread var(--timing) 
+  ease, --button-bg-opacity var(--timing) 
+  ease, --button-after-opacity var(--timing) 
+  ease, opacity var(--timing) 
+  ease, box-shadow var(--timing) 
+  ease, background-image var(--timing) 
+  ease;
+}
+.button-btn-fancy:hover {
+    --button-shadow-opacity: 16;
+    --button-shadow-spread: 16;
+    --button-after-opacity: 0.7;
+    --button-bg-opacity: 0.15;
+    transition: var(--transitions);
+}
+
+.button-btn-fancy {
+    all: unset;
+    --coord-y: 0;
+    --coord-x: 0;
+    --color-red: color(display-p3 0.95 0.06 0.02 / var(--button-bg-opacity));
+    --color-orange: color(display-p3 0.97 0.61 0.07 / var(--button-bg-opacity));
+    --color-olive: color(display-p3 0.83 0.87 0.04 / var(--button-bg-opacity));
+    --color-lime: color(display-p3 0.31 0.89 0.05 / var(--button-bg-opacity));
+    --color-teal: color(display-p3 0.12 0.88 0.88 / var(--button-bg-opacity));
+    --color-tealer: color(display-p3 0.15 0.8 0.93 / var(--button-bg-opacity));
+    --color-blue: color(display-p3 0.14 0.47 0.99 / var(--button-bg-opacity));
+    --color-purple: color(display-p3 0.38 0.14 0.99 / var(--button-bg-opacity));
+    --color-purpler: color(display-p3 0.73 0.04 0.94 / var(--button-bg-opacity));
+    --color-pink: color(display-p3 0.93 0.03 0.85 / var(--button-bg-opacity));
+    cursor: pointer;
+    color: var(--color-button);
+    border-radius: 50%;
+    font-weight: 600;
+    box-shadow: 0 8px calc(var(--button-shadow-spread) * 1px) -8px rgb(0 0 0 / calc(var(--button-shadow-opacity) * 1%));
+    border: 1px solid var(--btn-border-color);
+    display: flex
+;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.06);
+    background-image: conic-gradient(from 180deg, var(--color-red) 0%, var(--color-orange) 10%, var(--color-olive) 20%, var(--color-lime) 30%, var(--color-teal) 40%, var(--color-tealer) 50%, var(--color-blue) 60%, var(--color-purple) 70%, var(--color-purpler) 80%, var(--color-pink) 90%, var(--color-red) 100%);
+    background-size: calc(100% + 2px);
+    background-position: -1px -1px;
+    transition: var(--transitions);
+}
+.button-btn-fancy:after {
+    filter: saturate(2) blur(5px);
+    transform: translate(calc(calc(var(--coord-x) / 1.5) * 1px), calc(calc(var(--coord-y) / 1.5) * -1px));
+    width: 180%;
+    height: 180%;
+    opacity: calc(var(--button-after-opacity) / 3);
+}
+ .button-btn-fancy:after {
+    pointer-events: none;
+    border-radius: 0.8em;
+    content: "";
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transition: var(--transitions);
+    background-image: conic-gradient(from 180deg, var(--color-red) 0%, var(--color-orange) 10%, var(--color-olive) 20%, var(--color-lime) 30%, var(--color-teal) 40%, var(--color-tealer) 50%, var(--color-blue) 60%, var(--color-purple) 70%, var(--color-purpler) 80%, var(--color-pink) 90%, var(--color-red) 100%);
+}
+.button-btn-fancy:hover {
+    --button-after-opacity: 0.5;
+    --button-bg-opacity: 0.18;
+}
+
+
+button.button-btn-fancy .inner {
+    width: 48px;
+    height: 48px;
+    background: var(--bg-button);
+    border-radius:50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    grid-gap: 12px;
+    box-shadow: inset 0 calc(var(--btn-inner-shadow) * 2px) calc(var(--btn-inner-shadow) * 1px) rgba(255, 255, 255, 0.9), inset 0 calc(var(--btn-inner-shadow) * -2px) calc(var(--btn-inner-shadow) * 3px) rgba(0, 0, 0, 0.03);
+}
+ button.button-btn-fancy .inner {
+    box-shadow: inset 0 calc(var(--btn-inner-shadow) * 2px) calc(var(--btn-inner-shadow) * 3px) rgba(255, 255, 255, 0.01), inset 0 calc(var(--btn-inner-shadow) * -2px) calc(var(--btn-inner-shadow) * 3px) rgba(0, 0, 0, 0.25);
+}

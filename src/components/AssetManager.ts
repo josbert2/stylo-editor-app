@@ -126,6 +126,25 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
               </svg>
             </button>
             
+            <button class="refresh-assets-btn" style="
+              background: rgba(255, 255, 255, 0.05);
+              border: none;
+              border-radius: 6px;
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              color: rgba(255, 255, 255, 0.6);
+              transition: all 0.2s ease;
+              margin-left: 8px;
+            " title="Refresh Site Assets">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+              </svg>
+            </button>
+
             <button class="close-btn" style="
               background: rgba(255, 255, 255, 0.1);
               border: none;
@@ -392,6 +411,13 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
       this.createNewFolder();
     });
 
+    // Refresh assets
+    const refreshBtn = this.modalElement.querySelector('.refresh-assets-btn');
+    refreshBtn?.addEventListener('click', () => {
+      this.refreshSiteAssets();
+      this.showNotification('Site assets refreshed', 'success');
+    });
+
     // Selection actions
     const deleteSelectedBtn = this.modalElement.querySelector('.delete-selected-btn');
     const clearSelectionBtn = this.modalElement.querySelector('.clear-selection-btn');
@@ -424,7 +450,7 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
   };
 
   private loadAssets(): void {
-    // Load assets from localStorage or API
+    // Cargar assets guardados del localStorage
     const savedAssets = localStorage.getItem('stylo-assets');
     const savedFolders = localStorage.getItem('stylo-folders');
     
@@ -441,6 +467,182 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
         createdAt: new Date(folder.createdAt)
       }));
     }
+
+    // Escanear y detectar todos los assets existentes en el sitio
+    this.scanSiteAssets();
+  }
+
+  private scanSiteAssets(): void {
+    const existingUrls = new Set(this.assets.map(asset => asset.url));
+    const detectedAssets: AssetFile[] = [];
+
+    // Escanear imágenes
+    const images = document.querySelectorAll('img[src]');
+    images.forEach((img: HTMLImageElement) => {
+      if (img.src && !existingUrls.has(img.src) && !this.isDataUrl(img.src)) {
+        detectedAssets.push(this.createAssetFromElement(img, 'image'));
+      }
+    });
+
+    // Escanear videos
+    const videos = document.querySelectorAll('video[src], video source[src]');
+    videos.forEach((video: HTMLVideoElement | HTMLSourceElement) => {
+      if (video.src && !existingUrls.has(video.src) && !this.isDataUrl(video.src)) {
+        detectedAssets.push(this.createAssetFromElement(video, 'video'));
+      }
+    });
+
+    // Escanear audio
+    const audios = document.querySelectorAll('audio[src], audio source[src]');
+    audios.forEach((audio: HTMLAudioElement | HTMLSourceElement) => {
+      if (audio.src && !existingUrls.has(audio.src) && !this.isDataUrl(audio.src)) {
+        detectedAssets.push(this.createAssetFromElement(audio, 'audio'));
+      }
+    });
+
+    // Escanear backgrounds en CSS
+    this.scanCSSBackgrounds(existingUrls, detectedAssets);
+
+    // Escanear links a documentos
+    const links = document.querySelectorAll('a[href]');
+    links.forEach((link: HTMLAnchorElement) => {
+      if (link.href && !existingUrls.has(link.href) && this.isDocumentUrl(link.href)) {
+        detectedAssets.push(this.createAssetFromElement(link, 'document'));
+      }
+    });
+
+    // Agregar assets detectados
+    if (detectedAssets.length > 0) {
+      this.assets = [...detectedAssets, ...this.assets];
+      this.saveAssets();
+    }
+  }
+
+  private createAssetFromElement(element: HTMLElement, type: 'image' | 'video' | 'audio' | 'document'): AssetFile {
+    const url = (element as any).src || (element as any).href;
+    let fileName = this.extractFileName(url);
+    
+    // Obtener nombre descriptivo de alt o title para imágenes
+    if (type === 'image') {
+      const img = element as HTMLImageElement;
+      const altText = img.alt?.trim();
+      const titleText = img.title?.trim();
+      
+      if (altText && altText.length > 0) {
+        fileName = altText;
+      } else if (titleText && titleText.length > 0) {
+        fileName = titleText;
+      }
+    }
+    
+    return {
+      id: this.generateId(),
+      name: fileName,
+      type: type,
+      url: url,
+      size: 0, // No podemos determinar el tamaño sin hacer una request
+      mimeType: this.getMimeTypeFromUrl(url),
+      uploadedAt: new Date(),
+      tags: ['detected', 'site-asset'],
+      dimensions: type === 'image' ? this.getImageDimensionsFromElement(element as HTMLImageElement) : undefined
+    };
+  }
+
+  private scanCSSBackgrounds(existingUrls: Set<string>, detectedAssets: AssetFile[]): void {
+    const elements = document.querySelectorAll('*');
+    
+    elements.forEach((element: HTMLElement) => {
+      const computedStyle = window.getComputedStyle(element);
+      const backgroundImage = computedStyle.backgroundImage;
+      
+      if (backgroundImage && backgroundImage !== 'none') {
+        const urlMatch = backgroundImage.match(/url\(['"']?([^'"']+)['"']?\)/);
+        if (urlMatch && urlMatch[1]) {
+          const url = urlMatch[1];
+          if (!existingUrls.has(url) && !this.isDataUrl(url)) {
+            detectedAssets.push({
+              id: this.generateId(),
+              name: this.extractFileName(url),
+              type: 'image',
+              url: url,
+              size: 0,
+              mimeType: this.getMimeTypeFromUrl(url),
+              uploadedAt: new Date(),
+              tags: ['detected', 'css-background']
+            });
+            existingUrls.add(url);
+          }
+        }
+      }
+    });
+  }
+
+  private isDataUrl(url: string): boolean {
+    return url.startsWith('data:');
+  }
+
+  private isDocumentUrl(url: string): boolean {
+    const documentExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.rtf'];
+    return documentExtensions.some(ext => url.toLowerCase().includes(ext));
+  }
+
+  private extractFileName(url: string): string {
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      const fileName = pathname.split('/').pop() || 'unknown';
+      return decodeURIComponent(fileName);
+    } catch {
+      return url.split('/').pop() || 'unknown';
+    }
+  }
+
+  private getMimeTypeFromUrl(url: string): string {
+    const extension = url.split('.').pop()?.toLowerCase();
+    
+    const mimeTypes: { [key: string]: string } = {
+      // Imágenes
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml',
+      'bmp': 'image/bmp',
+      'ico': 'image/x-icon',
+      
+      // Videos
+      'mp4': 'video/mp4',
+      'webm': 'video/webm',
+      'ogg': 'video/ogg',
+      'avi': 'video/x-msvideo',
+      'mov': 'video/quicktime',
+      
+      // Audio
+      'mp3': 'audio/mpeg',
+      'wav': 'audio/wav',
+      'ogg': 'audio/ogg',
+      'aac': 'audio/aac',
+      
+      // Documentos
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    };
+    
+    return mimeTypes[extension || ''] || 'application/octet-stream';
+  }
+
+  private getImageDimensionsFromElement(img: HTMLImageElement): { width: number; height: number } | undefined {
+    if (img.naturalWidth && img.naturalHeight) {
+      return {
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      };
+    }
+    return undefined;
   }
 
   private saveAssets(): void {
@@ -676,6 +878,30 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
           ">${sizeText}</div>
         </div>
         
+        <!-- Botón de descarga -->
+        <button class="download-btn" data-asset-id="${asset.id}" style="
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          width: 28px;
+          height: 28px;
+          background: rgba(0, 0, 0, 0.7);
+          border: none;
+          border-radius: 50%;
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+          z-index: 10;
+        " title="Descargar asset">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
+          </svg>
+        </button>
+        
         ${isSelected ? `
           <div style="
             position: absolute;
@@ -715,6 +941,7 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
         display: flex;
         align-items: center;
         gap: 12px;
+        position: relative;
       ">
         <div class="asset-preview" style="
           width: 40px;
@@ -744,6 +971,26 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
             font-size: 12px;
           ">${asset.type} • ${sizeText} • ${dateText}</div>
         </div>
+        
+        <!-- Botón de descarga en vista lista -->
+        <button class="download-btn" data-asset-id="${asset.id}" style="
+          width: 32px;
+          height: 32px;
+          background: rgba(255, 255, 255, 0.1);
+          border: none;
+          border-radius: 4px;
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: background 0.2s ease;
+        " title="Descargar asset">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
+          </svg>
+        </button>
         
         ${isSelected ? `
           <div style="
@@ -810,7 +1057,30 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
     const assetCards = this.modalElement?.querySelectorAll('.asset-card, .asset-list-item');
     
     assetCards?.forEach(card => {
+      // Evento hover para mostrar botón de descarga en vista grid
+      if (card.classList.contains('asset-card')) {
+        card.addEventListener('mouseenter', () => {
+          const downloadBtn = card.querySelector('.download-btn') as HTMLElement;
+          if (downloadBtn) {
+            downloadBtn.style.opacity = '1';
+          }
+        });
+        
+        card.addEventListener('mouseleave', () => {
+          const downloadBtn = card.querySelector('.download-btn') as HTMLElement;
+          if (downloadBtn) {
+            downloadBtn.style.opacity = '0';
+          }
+        });
+      }
+      
+      // Evento click del asset
       card.addEventListener('click', (e) => {
+        // Evitar que el click del botón de descarga active la selección
+        if ((e.target as HTMLElement).closest('.download-btn')) {
+          return;
+        }
+        
         const assetId = card.getAttribute('data-asset-id');
         if (!assetId) return;
 
@@ -830,6 +1100,27 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
           }
         }
       });
+
+      // Evento del botón de descarga
+      const downloadBtn = card.querySelector('.download-btn');
+      downloadBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const assetId = downloadBtn.getAttribute('data-asset-id');
+        if (assetId) {
+          this.downloadAsset(assetId);
+        }
+      });
+
+      // Hover para botón de descarga en vista lista
+      if (card.classList.contains('asset-list-item')) {
+        const downloadBtn = card.querySelector('.download-btn') as HTMLElement;
+        downloadBtn?.addEventListener('mouseenter', () => {
+          downloadBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+        });
+        downloadBtn?.addEventListener('mouseleave', () => {
+          downloadBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+        });
+      }
 
       card.addEventListener('contextmenu', (e) => {
         e.preventDefault();
@@ -1109,6 +1400,13 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
         font-size: 14px;
         transition: background 0.2s ease;
       ">Use Asset</div>
+      <div class="context-menu-item" data-action="download" style="
+        padding: 8px 16px;
+        cursor: pointer;
+        color: white;
+        font-size: 14px;
+        transition: background 0.2s ease;
+      ">Download</div>
       <div class="context-menu-item" data-action="copy-url" style="
         padding: 8px 16px;
         cursor: pointer;
@@ -1172,6 +1470,9 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
         this.options.onAssetSelected?.(asset);
         this.hide();
         break;
+      case 'download':
+        this.downloadAsset(asset.id);
+        break;
       case 'copy-url':
         navigator.clipboard.writeText(asset.url);
         this.showNotification('URL copied to clipboard', 'success');
@@ -1199,6 +1500,29 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
           }
         }
         break;
+    }
+  }
+
+  // Nueva función para descargar assets
+  private downloadAsset(assetId: string): void {
+    const asset = this.assets.find(a => a.id === assetId);
+    if (!asset) return;
+
+    try {
+      // Crear un enlace temporal para la descarga
+      const link = document.createElement('a');
+      link.href = asset.url;
+      link.download = asset.name;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      this.showNotification(`Downloading "${asset.name}"`, 'success');
+    } catch (error) {
+      console.error('Error downloading asset:', error);
+      this.showNotification('Error downloading asset', 'error');
     }
   }
 
@@ -1300,6 +1624,14 @@ export class AssetManager extends EventEmitter<StyloEditorEvents> {
       if (this.isVisible) {
         this.renderAssets();
       }
+    }
+  }
+
+  // Método público para re-escanear el sitio
+  public refreshSiteAssets(): void {
+    this.scanSiteAssets();
+    if (this.isVisible) {
+      this.renderAssets();
     }
   }
 

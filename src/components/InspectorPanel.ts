@@ -11,6 +11,7 @@ import { AssetIcon } from '../icons';
 import { TooltipManager } from './TooltipManager';
 import { ScrollArea } from './ScrollArea';
 import { Dock } from './Dock';
+import { HTMLNavigator } from './HTMLNavigator';
 
 export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private container: HTMLElement;
@@ -26,6 +27,7 @@ export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private logoApp: HTMLElement | null = null;
   private scrollArea: ScrollArea | null = null;
   private dock: Dock | null = null;
+  private htmlNavigator: HTMLNavigator | null = null;
   
   // Propiedades para mejorar el drag
   private dragThrottleId: number | null = null;
@@ -153,7 +155,7 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
       position: fixed;
       left: ${this.position.x}px;
       top: ${this.position.y}px;
-      width: ${this.isMinimized ? '200px' : '400px'};
+      width: ${this.isMinimized ? '300px' : '400px'};
       height: ${this.isMinimized ? '44px' : 'calc(100vh - 40px)'};
       min-width: ${this.isMinimized ? '200px' : '400px'};
       min-height: ${this.isMinimized ? '44px' : '400px'};
@@ -325,6 +327,15 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
           cursor: pointer;
           font-weight: 500;
         ">Code</button>
+        <button class="tab-btn ${this.activeTab === 'html' ? 'active' : ''}" data-tab="html" style="
+          flex: 1;
+          padding: 12px;
+          background: ${this.activeTab === 'html' ? '#4AEDFF' : 'transparent'};
+          color: ${this.activeTab === 'html' ? '#000' : '#fff'};
+          border: none;
+          cursor: pointer;
+          font-weight: 500;
+        ">HTML</button>
       </div>
     `;
   }
@@ -384,6 +395,36 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
       
       this.scrollArea.appendChild(contentDiv);
     }
+
+    // Inicializar HTMLNavigator si la pestaña HTML está activa
+    if (this.activeTab === 'html') {
+      this.initializeHTMLNavigator();
+    }
+  }
+
+  /**
+   * Inicializar HTMLNavigator
+   */
+  private initializeHTMLNavigator(): void {
+    const container = this.panelElement?.querySelector('#html-navigator-container') as HTMLElement;
+    if (container) {
+      // Destruir instancia anterior si existe
+      if (this.htmlNavigator) {
+        this.htmlNavigator.destroy();
+      }
+
+      // Crear nueva instancia
+      this.htmlNavigator = new HTMLNavigator(container);
+      
+      // Vincular eventos
+      this.htmlNavigator.on('elementSelected', (data) => {
+        // Emitir evento para que el editor principal maneje la selección
+        this.emit('element:selected', data.element);
+      });
+
+      // Escanear HTML inicial
+      this.htmlNavigator.scanHTML();
+    }
   }
 
   /**
@@ -394,6 +435,8 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
       return this.renderDesignTab();
     } else if (this.activeTab === 'code') {
       return this.renderCodeTab();
+    } else if (this.activeTab === 'html') {
+      return this.renderHTMLTab();
     }
     return '';
   }
@@ -499,6 +542,24 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
             </div>
           </div>
         </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Renderizar pestaña HTML
+   */
+  private renderHTMLTab(): string {
+    return `
+      <div class="html-tab-content" style="
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      ">
+        <div id="html-navigator-container" style="
+          flex: 1;
+          overflow: hidden;
+        "></div>
       </div>
     `;
   }
@@ -946,6 +1007,14 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     }
     
     this.renderContent();
+    
+    // Inicializar HTMLNavigator cuando se cambie a la pestaña HTML
+    if (tab === 'html' && !this.isMinimized) {
+      setTimeout(() => {
+        this.initializeHTMLNavigator();
+      }, 100);
+    }
+    
     this.emit('tab:changed', tab);
   }
 
@@ -1062,9 +1131,22 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
   }
 
   /**
+   * Obtener instancia del HTMLNavigator
+   */
+  public getHTMLNavigator(): HTMLNavigator | null {
+    return this.htmlNavigator;
+  }
+
+  /**
    * Destruir el panel
    */
   override destroy(): void {
+    // Limpiar HTMLNavigator
+    if (this.htmlNavigator) {
+      this.htmlNavigator.destroy();
+      this.htmlNavigator = null;
+    }
+    
     // Limpiar ScrollArea
     if (this.scrollArea) {
       this.scrollArea.destroy();

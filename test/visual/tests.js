@@ -38,7 +38,7 @@ StyloEditor.init({
   container: document.body,
   panelOptions: {
     minimized: true,
-    position: { x: 220, y: 20 }
+    position: { x: 20, y: 20 }
   },
   excludeSelectors: ['.controls', '.controls *']
 });

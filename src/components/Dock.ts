@@ -5,6 +5,9 @@ import { ColorPalette } from './ColorPalette';
 import { ColorDropper } from './ColorDropper';
 import { Ruler } from './Ruler';
 import { AssetManager } from './AssetManager';
+import { HTMLNavigatorWindow } from './HTMLNavigatorWindow';
+
+import { FancyButton } from '../components/FancyButton';
 
 export class Dock extends EventEmitter<StyloEditorEvents> {
   private container: HTMLElement;
@@ -16,6 +19,9 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   private colorDropper: ColorDropper | null = null;
   private ruler: Ruler | null = null;
   private assetManager: AssetManager | null = null;
+  private htmlNavigatorWindow: HTMLNavigatorWindow | null = null;
+  private pauseButton: FancyButton | null = null;
+  private jsConsole: HTMLElement | null = null;
 
   constructor(container: HTMLElement) {
     super();
@@ -26,28 +32,7 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
 
   private createDock(): void {
     this.dockElement = document.createElement('div');
-    this.dockElement.className = 'stylo-dock';
-    this.dockElement.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: auto;
-      height: 60px;
-      background: rgba(18, 19, 21, 0.95);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(74, 237, 255, 0.2);
-      border-radius: 30px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(74, 237, 255, 0.1);
-      z-index: 9999;
-      display: none;
-      align-items: center;
-      padding: 0 20px;
-      gap: 12px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      opacity: 0;
-      transform: translateX(-50%) translateY(20px);
-    `;
+    this.dockElement.className = 'stylo-dock'
 
     this.container.appendChild(this.dockElement);
     this.renderDockContent();
@@ -57,268 +42,201 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     if (!this.dockElement) return;
 
     this.dockElement.innerHTML = `
-      <!-- Tabs principales -->
-      <div class="dock-tabs" style="display: flex; gap: 8px;">
-        <button class="dock-tab ${this.activeTab === 'design' ? 'active' : ''}" data-tab="design" data-tooltip="Design Tools" style="
-          background: ${this.activeTab === 'design' ? 'rgba(74, 237, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
-          border: none;
-          border-radius: 20px;
-          padding: 8px 16px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: ${this.activeTab === 'design' ? '#4AEDFF' : 'rgba(255, 255, 255, 0.7)'};
-          font-size: 14px;
-          font-weight: 500;
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-          Design
-        </button>
-        <button class="dock-tab ${this.activeTab === 'code' ? 'active' : ''}" data-tab="code" data-tooltip="Code Inspector" style="
-          background: ${this.activeTab === 'code' ? 'rgba(74, 237, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
-          border: none;
-          border-radius: 20px;
-          padding: 8px 16px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: ${this.activeTab === 'code' ? '#4AEDFF' : 'rgba(255, 255, 255, 0.7)'};
-          font-size: 14px;
-          font-weight: 500;
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
-          </svg>
-          Code
-        </button>
+      <button class="button-btn-fancy cc:rounded-full" style="--coord-x: 0; --coord-y: 0;">
+        <div class="inner">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12V8.44c0-4.42 3.13-6.23 6.96-4.02l3.09 1.78 3.09 1.78c3.83 2.21 3.83 5.83 0 8.04l-3.09 1.78-3.09 1.78C7.13 21.79 4 19.98 4 15.56V12Z" stroke="#777777" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+      </button>
+      <div class="dock-content dock-container">
+        <!-- Controles principales -->
+        <div class="dock-main-controls" style="display: flex;">
+          
+          <!-- Pause/Play -->
+         
+
+          <!-- CSS Changes -->
+          <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="css-changes" data-tooltip="Ver Cambios CSS">
+            <div class="inner" style="background:#212121">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+              </svg>
+            </div>
+          </button>
+
+          <!-- HTML Navigator -->
+          <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="html-navigator" data-tooltip="Navegador HTML">
+            <div class="inner" style="background:#212121">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+              </svg>
+            </div>
+          </button>
+
+          <!-- Color Palette -->
+          <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="color-palette" data-tooltip="Paleta de Colores">
+            <div class="inner" style="background:#212121">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.5,12A1.5,1.5 0 0,1 16,10.5A1.5,1.5 0 0,1 17.5,9A1.5,1.5 0 0,1 19,10.5A1.5,1.5 0 0,1 17.5,12M14.5,8A1.5,1.5 0 0,1 13,6.5A1.5,1.5 0 0,1 14.5,5A1.5,1.5 0 0,1 16,6.5A1.5,1.5 0 0,1 14.5,8M9.5,8A1.5,1.5 0 0,1 8,6.5A1.5,1.5 0 0,1 9.5,5A1.5,1.5 0 0,1 11,6.5A1.5,1.5 0 0,1 9.5,8M6.5,12A1.5,1.5 0 0,1 5,10.5A1.5,1.5 0 0,1 6.5,9A1.5,1.5 0 0,1 8,10.5A1.5,1.5 0 0,1 6.5,12M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A1.5,1.5 0 0,0 13.5,19.5C13.5,19.11 13.35,18.76 13.11,18.5C12.88,18.23 12.73,17.88 12.73,17.5A1.5,1.5 0 0,1 14.23,16H16A5,5 0 0,0 21,11C21,6.58 16.97,3 12,3Z" />
+              </svg>
+            </div>
+          </button>
+
+          <!-- Color Dropper -->
+          <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="color-dropper" data-tooltip="Cuentagotas de Color">
+            <div class="inner" style="background:#212121">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.35,10.04C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.04C2.34,8.36 0,10.91 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.04Z" />
+              </svg>
+            </div>
+          </button>
+
+          <!-- Ruler -->
+          <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="ruler" data-tooltip="Regla">
+            <div class="inner" style="background:#212121">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M1,5H3V19H1V5M5,5H7V19H5V5M9,5H11V19H9V5M13,5H15V19H13V5M17,5H19V19H17V5M21,5H23V19H21V5Z" />
+              </svg>
+            </div>
+          </button>
+
+          <!-- Asset Manager -->
+          <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="asset-manager" data-tooltip="Gestor de Assets">
+            <div class="inner" style="background:#212121">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+              </svg>
+            </div>
+          </button>
+        </div>
+
+        
+
+    
+        
       </div>
-
-      <div class="dock-divider" style="
-        width: 1px;
-        height: 24px;
-        background: rgba(255, 255, 255, 0.1);
-        margin: 0 8px;
-      "></div>
-
-      <!-- Herramientas principales -->
-      <div class="dock-tools" style="display: flex; gap: 6px;">
-        <!-- Pausar Inspector -->
-        <button class="dock-tool-btn ${this.isPaused ? 'active' : ''}" data-action="pause" data-tooltip="Pausar Inspector" style="
-          background: ${this.isPaused ? 'rgba(255, 193, 7, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
-          border: none;
-          border-radius: 8px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: ${this.isPaused ? '#FFC107' : 'rgba(255, 255, 255, 0.7)'};
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            ${this.isPaused ? 
-              '<path d="M8 5v14l11-7z"/>' : // Play icon cuando está pausado
-              '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>' // Pause icon cuando está activo
-            }
-          </svg>
-        </button>
-
-        <!-- CSS Changes -->
-        <button class="dock-tool-btn" data-action="css-changes" data-tooltip="CSS Changes" style="
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          border-radius: 8px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: rgba(255, 255, 255, 0.7);
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M5 3l3.5 3.5L7 8l-3.5-3.5L5 3zm6.5 6.5L15 6l3 3-3.5 3.5-3-3zm-7 7L8 13l3 3-3.5 3.5-3-3zm7 0L15 13l3 3-3.5 3.5-3-3z"/>
-          </svg>
-        </button>
-
-        <!-- HTML Navigator -->
-        <button class="dock-tool-btn" data-action="html-navigator" data-tooltip="HTML Navigator" style="
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          border-radius: 8px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: rgba(255, 255, 255, 0.7);
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2zm0 2.5L9.5 8.5 4 9.18l4 3.9-.94 5.5L12 16.5l4.94 2.08L16 13.08l4-3.9-5.5-.68L12 4.5z"/>
-          </svg>
-        </button>
-
-        <!-- Assets -->
-        <button class="dock-tool-btn" data-action="assets" data-tooltip="Assets Manager" style="
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          border-radius: 8px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: rgba(255, 255, 255, 0.7);
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-          </svg>
-        </button>
-
-        <!-- Ruler -->
-        <button class="dock-tool-btn" data-action="ruler" data-tooltip="Ruler Tool" style="
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          border-radius: 8px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: rgba(255, 255, 255, 0.7);
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M1.39 18.36l3.16 3.16 1.41-1.41-3.16-3.16L1.39 18.36zm6.61-6.61l-1.41-1.41-1.41 1.41L7.59 14.17 8 13.76l-1.41-1.41L8 10.94l1.41 1.41L8 13.76l1.41 1.41L8 16.59l1.41 1.41L8 19.41l-1.41-1.41L8 16.59z"/>
-          </svg>
-        </button>
-
-        <!-- Color Palette -->
-        <button class="dock-tool-btn" data-action="color-palette" data-tooltip="Color Palette" style="
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          border-radius: 8px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: rgba(255, 255, 255, 0.7);
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 3c-4.97 0-9 4.03-9 9 0 4.97 4.03 9 9 9 .83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-5.52-4.48-10-9-10z"/>
-            <circle cx="6.5" cy="11.5" r="1.5"/>
-            <circle cx="9.5" cy="7.5" r="1.5"/>
-            <circle cx="14.5" cy="7.5" r="1.5"/>
-            <circle cx="17.5" cy="11.5" r="1.5"/>
-          </svg>
-        </button>
-
-        <!-- Color Eyedropper -->
-        <button class="dock-tool-btn" data-action="eyedropper" data-tooltip="Color Eyedropper" style="
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          border-radius: 8px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: rgba(255, 255, 255, 0.7);
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.71 5.63l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-3.12 3.12-1.93-1.91-1.41 1.41 1.42 1.42L3 16.25V21h4.75l8.92-8.92 1.42 1.42 1.41-1.41-1.91-1.93 3.12-3.12c.4-.4.4-1.02 0-1.41z"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="dock-divider" style="
-        width: 1px;
-        height: 24px;
-        background: rgba(255, 255, 255, 0.1);
-        margin: 0 8px;
-      "></div>
-
-      <!-- Herramientas adicionales -->
-      <div class="dock-extra-tools" style="display: flex; gap: 6px;">
-        <!-- Responsive Mode -->
-        <button class="dock-tool-btn" data-action="responsive" data-tooltip="Modo Responsive" style="
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          border-radius: 8px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: rgba(255, 255, 255, 0.7);
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zm0 14V6h10v12H7zm0 3v-1h10v1H7z"/>
-          </svg>
-        </button>
-
-        <!-- More Options -->
-        <button class="dock-tool-btn" data-action="more" data-tooltip="Más Opciones" style="
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          border-radius: 8px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: rgba(255, 255, 255, 0.7);
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-          </svg>
-        </button>
-
-        <!-- Close Stylo Editor -->
-        <button class="dock-tool-btn" data-action="close-editor" data-tooltip="Apagar Editor Stylo" style="
-          background: rgba(220, 53, 69, 0.1);
-          border: none;
-          border-radius: 8px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: rgba(220, 53, 69, 0.8);
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/>
-          </svg>
-        </button>
-      </div>
+      <div class="dock-close-controls" style="display: flex; gap: 6px;">
+          <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="close-editor" data-tooltip="Apagar Editor Stylo">
+            <div class="inner" style="background:#212121">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/>
+              </svg>
+            </div>
+          </button>
+        </div>
     `;
+
+    // Inicializar el FancyButton después de crear el HTML
+    this.initializeFancyPauseButton();
 
     // Inicializar tooltips después de renderizar
     this.initializeTooltips();
+  }
+
+  private initializeFancyPauseButton(): void {
+    const container = this.dockElement?.querySelector('#fancy-pause-button') as HTMLElement;
+    if (!container) return;
+
+    // Crear el FancyButton
+    this.pauseButton = new FancyButton(container, {
+      text: this.isPaused ? 'Resume' : 'Pause',
+      variant: this.isPaused ? 'success' : 'cancel',
+      size: 'small'
+    });
+
+    // Aplicar estilos específicos para el dock
+    this.customizePauseButtonForDock();
+
+    // Manejar el evento de click
+    this.pauseButton.on('click', () => {
+      this.togglePause();
+    });
+  }
+
+
+  private customizePauseButtonForDock(): void {
+    if (!this.pauseButton) return;
+
+    const buttonElement = this.pauseButton['buttonElement'];
+    if (buttonElement) {
+      // ✨ Estilos DARK personalizados para el dock
+      buttonElement.style.cssText = `
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        border-radius: 8px !important;
+        font-size: 14px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        
+        /* 🌙 TEMA DARK */
+        background: ${this.isPaused ? 
+          'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))' : 
+          'linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.05))'
+        } !important;
+        
+        border: 1px solid ${this.isPaused ? 
+          'rgba(34, 197, 94, 0.3)' : 
+          'rgba(251, 191, 36, 0.3)'
+        } !important;
+        
+        color: ${this.isPaused ? 
+          'rgba(34, 197, 94, 0.9)' : 
+          'rgba(251, 191, 36, 0.9)'
+        } !important;
+        
+        box-shadow: 
+          0 2px 8px rgba(0, 0, 0, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+        
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+      `;
+
+      // ✨ Efectos hover DARK mejorados
+      buttonElement.addEventListener('mouseenter', () => {
+        buttonElement.style.transform = 'scale(1.1) translateY(-1px)';
+        buttonElement.style.boxShadow = `
+          0 4px 16px rgba(0, 0, 0, 0.6),
+          0 0 20px ${this.isPaused ? 
+            'rgba(34, 197, 94, 0.3)' : 
+            'rgba(251, 191, 36, 0.3)'
+          },
+          inset 0 1px 0 rgba(255, 255, 255, 0.2)
+        `;
+        buttonElement.style.background = this.isPaused ? 
+          'linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(34, 197, 94, 0.1))' : 
+          'linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(251, 191, 36, 0.1))';
+      });
+
+      buttonElement.addEventListener('mouseleave', () => {
+        buttonElement.style.transform = 'scale(1) translateY(0)';
+        buttonElement.style.boxShadow = `
+          0 2px 8px rgba(0, 0, 0, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1)
+        `;
+        buttonElement.style.background = this.isPaused ? 
+          'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))' : 
+          'linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.05))';
+      });
+
+      // ✨ Efecto de click DARK
+      buttonElement.addEventListener('mousedown', () => {
+        buttonElement.style.transform = 'scale(0.95) translateY(1px)';
+        buttonElement.style.boxShadow = `
+          0 1px 4px rgba(0, 0, 0, 0.8),
+          inset 0 2px 4px rgba(0, 0, 0, 0.3)
+        `;
+      });
+
+      buttonElement.addEventListener('mouseup', () => {
+        buttonElement.style.transform = 'scale(1.1) translateY(-1px)';
+      });
+    }
   }
 
   private initializeTooltips(): void {
@@ -388,9 +306,13 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
         this.emit('dock:css-changes');
         break;
       case 'html-navigator':
-        this.emit('dock:html-navigator');
+        this.toggleHTMLNavigator();
+        break;
+      case 'console-js':
+        this.toggleJSConsole();
         break;
       case 'assets':
+      case 'asset-manager':
         this.toggleAssetManager();
         break;
       case 'ruler':
@@ -400,6 +322,7 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
         this.toggleColorPalette();
         break;
       case 'eyedropper':
+      case 'color-dropper':
         this.toggleColorDropper();
         break;
       case 'responsive':
@@ -670,6 +593,245 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     }
   }
 
+  private toggleHTMLNavigator(): void {
+    if (!this.htmlNavigatorWindow) {
+      // Calcular posición cerca del botón del HTML Navigator
+      const htmlNavBtn = this.dockElement?.querySelector('[data-action="html-navigator"]') as HTMLElement;
+      let position = { x: window.innerWidth / 2 - 200, y: window.innerHeight / 2 - 250 };
+      
+      if (htmlNavBtn && this.dockElement) {
+        const btnRect = htmlNavBtn.getBoundingClientRect();
+        const dockRect = this.dockElement.getBoundingClientRect();
+        
+        // Posicionar la ventana arriba del dock, centrada con el botón
+        position = {
+          x: btnRect.left + (btnRect.width / 2) - 200, // Centrar con el botón (200 es la mitad del ancho de la ventana)
+          y: dockRect.top - 520 // Arriba del dock con espacio suficiente
+        };
+        
+        // Ajustar si se sale de la pantalla horizontalmente
+        if (position.x < 20) position.x = 20;
+        if (position.x + 400 > window.innerWidth - 20) position.x = window.innerWidth - 420;
+        
+        // Ajustar si se sale de la pantalla verticalmente
+        if (position.y < 20) {
+          position.y = btnRect.bottom + 10; // Si no cabe arriba, ponerla abajo
+        }
+      }
+      
+      this.htmlNavigatorWindow = new HTMLNavigatorWindow(this.container, { position });
+      
+      // Escuchar eventos del HTML Navigator
+      this.htmlNavigatorWindow.on('html-navigator:element-selected', (element: HTMLElement) => {
+        this.emit('dock:element-selected', element);
+      });
+      
+      this.htmlNavigatorWindow.on('html-navigator:hidden', () => {
+        this.updateHTMLNavigatorButtonState(false);
+      });
+    }
+    
+    if (this.htmlNavigatorWindow.isShown()) {
+      this.htmlNavigatorWindow.hide();
+      this.updateHTMLNavigatorButtonState(false);
+    } else {
+      // Recalcular posición cada vez que se muestra
+      const htmlNavBtn = this.dockElement?.querySelector('[data-action="html-navigator"]') as HTMLElement;
+      if (htmlNavBtn && this.dockElement) {
+        const btnRect = htmlNavBtn.getBoundingClientRect();
+        const dockRect = this.dockElement.getBoundingClientRect();
+        
+        let position = {
+          x: btnRect.left + (btnRect.width / 2) - 200,
+          y: dockRect.top - 520
+        };
+        
+        // Ajustar si se sale de la pantalla
+        if (position.x < 20) position.x = 20;
+        if (position.x + 400 > window.innerWidth - 20) position.x = window.innerWidth - 420;
+        if (position.y < 20) position.y = btnRect.bottom + 10;
+        
+        this.htmlNavigatorWindow.show(position);
+      } else {
+        this.htmlNavigatorWindow.show();
+      }
+      this.updateHTMLNavigatorButtonState(true);
+    }
+  }
+
+  private updateHTMLNavigatorButtonState(active: boolean): void {
+    const htmlNavBtn = this.dockElement?.querySelector('[data-action="html-navigator"]') as HTMLElement;
+    if (htmlNavBtn) {
+      htmlNavBtn.style.background = active ? 'rgba(33, 150, 243, 0.2)' : 'rgba(255, 255, 255, 0.1)';
+      htmlNavBtn.style.color = active ? 'rgba(33, 150, 243, 0.9)' : 'rgba(255, 255, 255, 0.7)';
+    }
+  }
+
+  private toggleJSConsole(): void {
+    if (this.jsConsole) {
+      // Si ya existe, alternar visibilidad
+      this.jsConsole.hidden = !this.jsConsole.hidden;
+    } else {
+      // Crear la consola por primera vez
+      this.createJSConsole();
+    }
+  }
+
+  private createJSConsole(): void {
+    // Crear el elemento de la consola
+    this.jsConsole = document.createElement('div');
+    this.jsConsole.id = 'inapp-console';
+    this.jsConsole.style.cssText = `
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 180px;
+      background: #0b0f14;
+      color: #cfe8ff;
+      font: 12px/1.4 ui-monospace, Menlo, monospace;
+      border-top: 1px solid #233;
+      display: flex;
+      flex-direction: column;
+      z-index: 99999;
+    `;
+
+    // Crear el header de la consola
+    const header = document.createElement('div');
+    header.style.cssText = `
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 8px;
+      background: #0e1620;
+      border-bottom: 1px solid #233;
+    `;
+
+    const title = document.createElement('strong');
+    title.textContent = 'Console (solo errores)';
+
+    const clearBtn = document.createElement('button');
+    clearBtn.id = 'clear-btn';
+    clearBtn.textContent = 'Limpiar';
+    clearBtn.style.cssText = `
+      margin-left: auto;
+      background: #1a1f2e;
+      color: #cfe8ff;
+      border: 1px solid #233;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+    `;
+
+    header.appendChild(title);
+    header.appendChild(clearBtn);
+
+    // Crear el body de la consola
+    const body = document.createElement('div');
+    body.id = 'inapp-body';
+    body.style.cssText = `
+      overflow: auto;
+      padding: 6px 8px;
+      white-space: pre-wrap;
+      flex: 1;
+    `;
+
+    this.jsConsole.appendChild(header);
+    this.jsConsole.appendChild(body);
+
+    // Agregar al DOM
+    document.body.appendChild(this.jsConsole);
+
+    // Configurar funcionalidad
+    this.setupConsoleLogic();
+  }
+
+  private setupConsoleLogic(): void {
+    if (!this.jsConsole) return;
+
+    const body = this.jsConsole.querySelector('#inapp-body') as HTMLElement;
+    const clearBtn = this.jsConsole.querySelector('#clear-btn') as HTMLButtonElement;
+
+    // Función para limpiar la consola
+    clearBtn.onclick = () => body.textContent = '';
+
+    // Función para mostrar la consola
+    const show = () => {
+      if (this.jsConsole) this.jsConsole.hidden = false;
+    };
+
+    // Función para agregar líneas de log
+    const line = (level: string, msg: string) => {
+      const el = document.createElement('div');
+      el.textContent = `[${new Date().toISOString()}] ${level} — ${msg}`;
+      el.style.color = level === 'ERROR' ? '#ff9aa2' : '#ffd666';
+      body.appendChild(el);
+      body.scrollTop = body.scrollHeight;
+      show(); // auto-mostrar cuando pase algo
+    };
+
+    // 1) Errores JS "reales"
+    window.addEventListener('error', (ev) => {
+      // Cubre runtime errors y también errores de recursos (img/script/css) cuando useCapture=true
+      const isResource = ev.target && ((ev.target as any).src || (ev.target as any).href);
+      if (isResource) {
+        const url = (ev.target as any).src || (ev.target as any).href || '(desconocido)';
+        line('ERROR', `Fallo de recurso: ${url}`);
+      } else {
+        const where = `${ev.filename}:${ev.lineno}:${ev.colno}`;
+        line('ERROR', `${ev.message} @ ${where}\n${ev.error && ev.error.stack ? ev.error.stack : ''}`);
+      }
+    }, true); // <-- capture=true para errores de recursos
+
+    // 2) Promesas no manejadas
+    window.addEventListener('unhandledrejection', (ev) => {
+      const reason = ev.reason instanceof Error ? (ev.reason.stack || ev.reason.message) : JSON.stringify(ev.reason);
+      line('ERROR', `UnhandledRejection: ${reason}`);
+    });
+
+    // 3) Deprecations / Interventions (sin tocar console)
+    if ('ReportingObserver' in window) {
+      const ro = new ReportingObserver((reports) => {
+        for (const r of reports) {
+          line('WARN', `ReportingObserver: ${r.type} — ${r.body && (r.body as any).message ? (r.body as any).message : ''}`);
+        }
+      }, { types: ['deprecation', 'intervention'], buffered: true });
+      ro.observe();
+    }
+
+    // 4) (Opcional) Métricas de recursos fallidos vía PerformanceObserver
+    if ('PerformanceObserver' in window) {
+      try {
+        const po = new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            const perfEntry = entry as any;
+            if (perfEntry.initiatorType && perfEntry.duration === 0 && perfEntry.responseStatus === 0) {
+              // Heurística simple: solicitudes que no cargaron
+              line('WARN', `Posible fallo de carga: ${perfEntry.name} (${perfEntry.initiatorType})`);
+            }
+          }
+        });
+        po.observe({ type: 'resource', buffered: true });
+      } catch (e) {
+        // Silenciar errores de PerformanceObserver
+      }
+    }
+
+    // 5) (Opcional) botón/atajo para abrir/cerrar con "~"
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '`' || e.key === '~') {
+        if (this.jsConsole) {
+          this.jsConsole.hidden = !this.jsConsole.hidden;
+        }
+      }
+    });
+  }
+
+  public getHTMLNavigatorWindow(): HTMLNavigatorWindow | null {
+    return this.htmlNavigatorWindow;
+  }
+
   public show(): void {
     if (!this.dockElement || this.isVisible) return;
     
@@ -718,14 +880,29 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
 
   public togglePause(): void {
     this.isPaused = !this.isPaused;
-    this.renderDockContent();
+    
+    // ✨ Actualizar el FancyButton en lugar de re-renderizar todo
+    if (this.pauseButton) {
+      this.pauseButton.setText(this.isPaused ? '▶️' : '⏸️');
+      this.pauseButton.setVariant(this.isPaused ? 'success' : 'warning');
+      // Re-aplicar estilos dark después del cambio
+      this.customizePauseButtonForDock();
+    }
+    
     this.emit('dock:pause', this.isPaused);
   }
 
   public setPaused(paused: boolean): void {
     if (this.isPaused !== paused) {
       this.isPaused = paused;
-      this.renderDockContent();
+      
+      // ✨ Actualizar el FancyButton
+      if (this.pauseButton) {
+        this.pauseButton.setText(this.isPaused ? '▶️' : '⏸️');
+        this.pauseButton.setVariant(this.isPaused ? 'success' : 'warning');
+        // Re-aplicar estilos dark después del cambio
+        this.customizePauseButtonForDock();
+      }
     }
   }
 
@@ -734,31 +911,46 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   }
 
   public destroy(): void {
-    if (this.ruler) {
-      this.ruler.destroy();
-      this.ruler = null;
+    if (this.pauseButton) {
+      this.pauseButton.destroy();
+      this.pauseButton = null;
     }
-    
+
     if (this.colorPalette) {
       this.colorPalette.destroy();
       this.colorPalette = null;
     }
-    
+
     if (this.colorDropper) {
       this.colorDropper.destroy();
       this.colorDropper = null;
     }
-    
+
+    if (this.ruler) {
+      this.ruler.destroy();
+      this.ruler = null;
+    }
+
     if (this.assetManager) {
       this.assetManager.destroy();
       this.assetManager = null;
+    }
+
+    if (this.htmlNavigatorWindow) {
+      this.htmlNavigatorWindow.destroy();
+      this.htmlNavigatorWindow = null;
+    }
+
+    if (this.jsConsole) {
+      this.jsConsole.remove();
+      this.jsConsole = null;
     }
 
     if (this.dockElement) {
       this.dockElement.remove();
       this.dockElement = null;
     }
-    
+
     this.isVisible = false;
     this.removeAllListeners();
   }

@@ -205,4 +205,5 @@ export interface StyloEditorEvents {
   'asset:deleted': string;
   'asset-manager:opened': void;
   'asset-manager:closed': void;
+  'elementSelected': { element: HTMLElement; elementInfo: any };
 }
