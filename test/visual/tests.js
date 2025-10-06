@@ -77,4 +77,4 @@ setTimeout(() => {
       qrq.anotherNonExistentMethod();
     }, 500);
   }, 1000);
-}, 1000);
+}, 4000);

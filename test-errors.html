@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Detection Test</title>
+</head>
+<body>
+    <h1>JSConsole Error Detection Test</h1>
+    <p>This page will trigger various errors to test the JSConsole detection.</p>
+    
+    <button onclick="testReferenceErrors()">Test Reference Errors</button>
+    <button onclick="testPromiseRejection()">Test Promise Rejection</button>
+    <button onclick="testNetworkError()">Test Network Error</button>
+    <button onclick="testResourceError()">Test Resource Error</button>
+
+    <script>
+        // Import JSConsole and initialize it
+        import { JSConsole } from './src/components/JSConsole.js';
+        
+        // Initialize console for error detection
+        const jsConsole = new JSConsole(document.body);
+        
+        function testReferenceErrors() {
+            console.log('Testing ReferenceErrors...');
+            
+            // These should trigger ReferenceErrors like in the screenshot
+            try { e; } catch(err) { console.error('Caught:', err); }
+            try { rw; } catch(err) { console.error('Caught:', err); }
+            try { et; } catch(err) { console.error('Caught:', err); }
+            try { we; } catch(err) { console.error('Caught:', err); }
+            try { twe; } catch(err) { console.error('Caught:', err); }
+            
+            // Also trigger uncaught errors
+            setTimeout(() => {
+                e; // This should be uncaught
+            }, 100);
+            
+            setTimeout(() => {
+                rw; // This should be uncaught
+            }, 200);
+        }
+        
+        function testPromiseRejection() {
+            console.log('Testing Promise Rejection...');
+            
+            // Unhandled promise rejection
+            Promise.reject(new Error('Test promise rejection'));
+            
+            // Promise that rejects with non-Error value
+            Promise.reject('String rejection');
+        }
+        
+        function testNetworkError() {
+            console.log('Testing Network Error...');
+            
+            // Test fetch error
+            fetch('https://nonexistent-domain-12345.com/api/test')
+                .catch(err => console.log('Fetch error caught:', err));
+                
+            // Test XHR error
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://nonexistent-domain-12345.com/api/test');
+            xhr.send();
+        }
+        
+        function testResourceError() {
+            console.log('Testing Resource Error...');
+            
+            // Create broken image
+            const img = document.createElement('img');
+            img.src = 'https://nonexistent-domain-12345.com/broken-image.jpg';
+            document.body.appendChild(img);
+            
+            // Create broken script
+            const script = document.createElement('script');
+            script.src = 'https://nonexistent-domain-12345.com/broken-script.js';
+            document.head.appendChild(script);
+        }
+        
+        // Auto-test on load
+        setTimeout(() => {
+            console.log('Auto-testing errors in 2 seconds...');
+            setTimeout(testReferenceErrors, 2000);
+        }, 1000);
+    </script>
+</body>
+</html>

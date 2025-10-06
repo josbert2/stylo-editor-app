@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug JSConsole</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        button { margin: 10px; padding: 10px; }
+        .test-area { background: #f0f0f0; padding: 20px; margin: 20px 0; }
+        .log { background: #000; color: #0f0; padding: 10px; margin: 10px 0; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>JSConsole Debug Test</h1>
+    
+    <div class="test-area">
+        <h3>Manual Error Tests</h3>
+        <button onclick="testReferenceError()">Test ReferenceError</button>
+        <button onclick="testPromiseRejection()">Test Promise Rejection</button>
+        <button onclick="testConsoleError()">Test console.error</button>
+        <button onclick="testNetworkError()">Test Network Error</button>
+    </div>
+
+    <div class="log" id="debug-log">
+        Debug Log:
+    </div>
+
+    <script>
+        // Simple debug logger
+        function debugLog(message) {
+            const log = document.getElementById('debug-log');
+            log.innerHTML += `\n[${new Date().toLocaleTimeString()}] ${message}`;
+        }
+
+        // Test if global error handlers are working
+        let originalErrorHandler = window.onerror;
+        let originalRejectionHandler = window.onunhandledrejection;
+
+        debugLog('Setting up test error handlers...');
+
+        window.addEventListener('error', (event) => {
+            debugLog(`GLOBAL ERROR DETECTED: ${event.message} at ${event.filename}:${event.lineno}`);
+        }, true);
+
+        window.addEventListener('unhandledrejection', (event) => {
+            debugLog(`GLOBAL REJECTION DETECTED: ${event.reason}`);
+        });
+
+        debugLog('Test handlers set up');
+
+        // Test functions
+        function testReferenceError() {
+            debugLog('Testing ReferenceError...');
+            setTimeout(() => {
+                try {
+                    // This should trigger a ReferenceError
+                    nonExistentVariable;
+                } catch (e) {
+                    debugLog('ReferenceError caught in try-catch: ' + e.message);
+                }
+                
+                // This should trigger an uncaught ReferenceError
+                setTimeout(() => {
+                    debugLog('About to trigger uncaught ReferenceError...');
+                    undefinedVar123;
+                }, 100);
+            }, 100);
+        }
+
+        function testPromiseRejection() {
+            debugLog('Testing Promise Rejection...');
+            Promise.reject(new Error('Test promise rejection'));
+        }
+
+        function testConsoleError() {
+            debugLog('Testing console.error...');
+            console.error('Test console error message');
+        }
+
+        function testNetworkError() {
+            debugLog('Testing Network Error...');
+            fetch('https://nonexistent-domain-12345.com/test')
+                .catch(err => debugLog('Fetch error caught: ' + err.message));
+        }
+
+        // Check if JSConsole exists and is working
+        debugLog('Checking for JSConsole...');
+        
+        // Try to access JSConsole if it's available
+        setTimeout(() => {
+            if (window.JSConsole) {
+                debugLog('JSConsole found in window');
+            } else {
+                debugLog('JSConsole NOT found in window');
+            }
+            
+            // Check for any console-related elements
+            const consoleElements = document.querySelectorAll('[id*="console"], [class*="console"]');
+            debugLog(`Found ${consoleElements.length} console-related elements`);
+            
+            consoleElements.forEach((el, i) => {
+                debugLog(`Element ${i}: ${el.tagName} id="${el.id}" class="${el.className}"`);
+            });
+        }, 1000);
+
+        debugLog('Debug script loaded');
+    </script>
+</body>
+</html>

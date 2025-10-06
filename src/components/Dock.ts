@@ -29,6 +29,9 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     this.container = container;
     this.createDock();
     this.bindEvents();
+    
+    // Initialize JSConsole immediately for error detection
+    this.initializeJSConsole();
   }
 
   private createDock(): void {
@@ -677,7 +680,7 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     }
   }
 
-  private toggleJSConsole(): void {
+  private initializeJSConsole(): void {
     if (!this.jsConsole) {
       this.jsConsole = new JSConsole(this.container);
       
@@ -689,13 +692,22 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
       this.jsConsole.on('js-console:shown', () => {
         this.updateConsoleButtonState(true);
       });
+      
+      // Keep console hidden initially, but error detection is now active
+      this.jsConsole.hide();
+    }
+  }
+
+  private toggleJSConsole(): void {
+    if (!this.jsConsole) {
+      this.initializeJSConsole();
     }
     
-    if (this.jsConsole.isShown()) {
-      this.jsConsole.hide();
+    if (this.jsConsole!.isShown()) {
+      this.jsConsole!.hide();
       this.updateConsoleButtonState(false);
     } else {
-      this.jsConsole.show();
+      this.jsConsole!.show();
       this.updateConsoleButtonState(true);
     }
   }
