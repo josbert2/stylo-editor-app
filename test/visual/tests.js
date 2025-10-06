@@ -54,3 +54,27 @@ if (window.styloEditor) {
     showNotification(message, 'success');
   });
 }
+
+
+// Pruebas de consola para verificar que funciona
+setTimeout(() => {
+  console.log('Editor inicializado con éxito');
+  console.warn('Esta es una advertencia de prueba');
+  console.error('Este es un error de prueba');
+  console.info('Esta es información de prueba');
+  
+  // Crear un error intencional para probar
+  setTimeout(() => {
+    try {
+      // Esto debería generar un error
+      dasd.nonExistentMethod();
+    } catch (e) {
+      console.error('Error capturado:', e);
+    }
+    
+    // Error no capturado (debería aparecer en la consola)
+    setTimeout(() => {
+      qrq.anotherNonExistentMethod();
+    }, 500);
+  }, 1000);
+}, 1000);

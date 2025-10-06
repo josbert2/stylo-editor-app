@@ -6,6 +6,7 @@ import { ColorDropper } from './ColorDropper';
 import { Ruler } from './Ruler';
 import { AssetManager } from './AssetManager';
 import { HTMLNavigatorWindow } from './HTMLNavigatorWindow';
+import { JSConsole } from './JSConsole';
 
 import { FancyButton } from '../components/FancyButton';
 
@@ -21,7 +22,7 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   private assetManager: AssetManager | null = null;
   private htmlNavigatorWindow: HTMLNavigatorWindow | null = null;
   private pauseButton: FancyButton | null = null;
-  private jsConsole: HTMLElement | null = null;
+  private jsConsole: JSConsole | null = null;
 
   constructor(container: HTMLElement) {
     super();
@@ -77,6 +78,15 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
             <div class="inner" style="background:#212121">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.5,12A1.5,1.5 0 0,1 16,10.5A1.5,1.5 0 0,1 17.5,9A1.5,1.5 0 0,1 19,10.5A1.5,1.5 0 0,1 17.5,12M14.5,8A1.5,1.5 0 0,1 13,6.5A1.5,1.5 0 0,1 14.5,5A1.5,1.5 0 0,1 16,6.5A1.5,1.5 0 0,1 14.5,8M9.5,8A1.5,1.5 0 0,1 8,6.5A1.5,1.5 0 0,1 9.5,5A1.5,1.5 0 0,1 11,6.5A1.5,1.5 0 0,1 9.5,8M6.5,12A1.5,1.5 0 0,1 5,10.5A1.5,1.5 0 0,1 6.5,9A1.5,1.5 0 0,1 8,10.5A1.5,1.5 0 0,1 6.5,12M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A1.5,1.5 0 0,0 13.5,19.5C13.5,19.11 13.35,18.76 13.11,18.5C12.88,18.23 12.73,17.88 12.73,17.5A1.5,1.5 0 0,1 14.23,16H16A5,5 0 0,0 21,11C21,6.58 16.97,3 12,3Z" />
+              </svg>
+            </div>
+          </button>
+
+          <!-- JavaScript Console -->
+          <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="console-js" data-tooltip="Consola JavaScript">
+            <div class="inner" style="background:#212121">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z" />
               </svg>
             </div>
           </button>
@@ -668,164 +678,41 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   }
 
   private toggleJSConsole(): void {
-    if (this.jsConsole) {
-      // Si ya existe, alternar visibilidad
-      this.jsConsole.hidden = !this.jsConsole.hidden;
+    if (!this.jsConsole) {
+      this.jsConsole = new JSConsole(this.container);
+      
+      // Escuchar eventos de la consola
+      this.jsConsole.on('js-console:hidden', () => {
+        this.updateConsoleButtonState(false);
+      });
+
+      this.jsConsole.on('js-console:shown', () => {
+        this.updateConsoleButtonState(true);
+      });
+    }
+    
+    if (this.jsConsole.isShown()) {
+      this.jsConsole.hide();
+      this.updateConsoleButtonState(false);
     } else {
-      // Crear la consola por primera vez
-      this.createJSConsole();
+      this.jsConsole.show();
+      this.updateConsoleButtonState(true);
     }
   }
 
-  private createJSConsole(): void {
-    // Crear el elemento de la consola
-    this.jsConsole = document.createElement('div');
-    this.jsConsole.id = 'inapp-console';
-    this.jsConsole.style.cssText = `
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 180px;
-      background: #0b0f14;
-      color: #cfe8ff;
-      font: 12px/1.4 ui-monospace, Menlo, monospace;
-      border-top: 1px solid #233;
-      display: flex;
-      flex-direction: column;
-      z-index: 99999;
-    `;
-
-    // Crear el header de la consola
-    const header = document.createElement('div');
-    header.style.cssText = `
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      padding: 6px 8px;
-      background: #0e1620;
-      border-bottom: 1px solid #233;
-    `;
-
-    const title = document.createElement('strong');
-    title.textContent = 'Console (solo errores)';
-
-    const clearBtn = document.createElement('button');
-    clearBtn.id = 'clear-btn';
-    clearBtn.textContent = 'Limpiar';
-    clearBtn.style.cssText = `
-      margin-left: auto;
-      background: #1a1f2e;
-      color: #cfe8ff;
-      border: 1px solid #233;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 11px;
-    `;
-
-    header.appendChild(title);
-    header.appendChild(clearBtn);
-
-    // Crear el body de la consola
-    const body = document.createElement('div');
-    body.id = 'inapp-body';
-    body.style.cssText = `
-      overflow: auto;
-      padding: 6px 8px;
-      white-space: pre-wrap;
-      flex: 1;
-    `;
-
-    this.jsConsole.appendChild(header);
-    this.jsConsole.appendChild(body);
-
-    // Agregar al DOM
-    document.body.appendChild(this.jsConsole);
-
-    // Configurar funcionalidad
-    this.setupConsoleLogic();
-  }
-
-  private setupConsoleLogic(): void {
-    if (!this.jsConsole) return;
-
-    const body = this.jsConsole.querySelector('#inapp-body') as HTMLElement;
-    const clearBtn = this.jsConsole.querySelector('#clear-btn') as HTMLButtonElement;
-
-    // Función para limpiar la consola
-    clearBtn.onclick = () => body.textContent = '';
-
-    // Función para mostrar la consola
-    const show = () => {
-      if (this.jsConsole) this.jsConsole.hidden = false;
-    };
-
-    // Función para agregar líneas de log
-    const line = (level: string, msg: string) => {
-      const el = document.createElement('div');
-      el.textContent = `[${new Date().toISOString()}] ${level} — ${msg}`;
-      el.style.color = level === 'ERROR' ? '#ff9aa2' : '#ffd666';
-      body.appendChild(el);
-      body.scrollTop = body.scrollHeight;
-      show(); // auto-mostrar cuando pase algo
-    };
-
-    // 1) Errores JS "reales"
-    window.addEventListener('error', (ev) => {
-      // Cubre runtime errors y también errores de recursos (img/script/css) cuando useCapture=true
-      const isResource = ev.target && ((ev.target as any).src || (ev.target as any).href);
-      if (isResource) {
-        const url = (ev.target as any).src || (ev.target as any).href || '(desconocido)';
-        line('ERROR', `Fallo de recurso: ${url}`);
+  private updateConsoleButtonState(active: boolean): void {
+    const consoleBtn = this.dockElement?.querySelector('[data-action="console-js"]') as HTMLElement;
+    if (consoleBtn) {
+      if (active) {
+        consoleBtn.classList.add('active');
+        consoleBtn.style.background = 'rgba(34, 197, 94, 0.2)';
+        consoleBtn.style.borderColor = 'rgba(34, 197, 94, 0.4)';
       } else {
-        const where = `${ev.filename}:${ev.lineno}:${ev.colno}`;
-        line('ERROR', `${ev.message} @ ${where}\n${ev.error && ev.error.stack ? ev.error.stack : ''}`);
-      }
-    }, true); // <-- capture=true para errores de recursos
-
-    // 2) Promesas no manejadas
-    window.addEventListener('unhandledrejection', (ev) => {
-      const reason = ev.reason instanceof Error ? (ev.reason.stack || ev.reason.message) : JSON.stringify(ev.reason);
-      line('ERROR', `UnhandledRejection: ${reason}`);
-    });
-
-    // 3) Deprecations / Interventions (sin tocar console)
-    if ('ReportingObserver' in window) {
-      const ro = new ReportingObserver((reports) => {
-        for (const r of reports) {
-          line('WARN', `ReportingObserver: ${r.type} — ${r.body && (r.body as any).message ? (r.body as any).message : ''}`);
-        }
-      }, { types: ['deprecation', 'intervention'], buffered: true });
-      ro.observe();
-    }
-
-    // 4) (Opcional) Métricas de recursos fallidos vía PerformanceObserver
-    if ('PerformanceObserver' in window) {
-      try {
-        const po = new PerformanceObserver((list) => {
-          for (const entry of list.getEntries()) {
-            const perfEntry = entry as any;
-            if (perfEntry.initiatorType && perfEntry.duration === 0 && perfEntry.responseStatus === 0) {
-              // Heurística simple: solicitudes que no cargaron
-              line('WARN', `Posible fallo de carga: ${perfEntry.name} (${perfEntry.initiatorType})`);
-            }
-          }
-        });
-        po.observe({ type: 'resource', buffered: true });
-      } catch (e) {
-        // Silenciar errores de PerformanceObserver
+        consoleBtn.classList.remove('active');
+        consoleBtn.style.background = '';
+        consoleBtn.style.borderColor = '';
       }
     }
-
-    // 5) (Opcional) botón/atajo para abrir/cerrar con "~"
-    document.addEventListener('keydown', (e) => {
-      if (e.key === '`' || e.key === '~') {
-        if (this.jsConsole) {
-          this.jsConsole.hidden = !this.jsConsole.hidden;
-        }
-      }
-    });
   }
 
   public getHTMLNavigatorWindow(): HTMLNavigatorWindow | null {
@@ -942,7 +829,7 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     }
 
     if (this.jsConsole) {
-      this.jsConsole.remove();
+      this.jsConsole.destroy();
       this.jsConsole = null;
     }
 
