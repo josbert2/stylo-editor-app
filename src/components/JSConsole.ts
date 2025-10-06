@@ -20,8 +20,6 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
   private resizeHandle: HTMLElement | null = null;
   private isResizing: boolean = false;
   private initialHeight: number = 180;
-  private pendingLogs: Array<{level: string, msg: string, color: string}> = [];
-
   constructor(container: HTMLElement, options: JSConsoleOptions = {}) {
     super();
     this.container = container;
@@ -31,9 +29,6 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
     this.setupConsoleInterceptors();
     this.setupEventListeners();
     this.setupResizing();
-    
-    // Procesar logs pendientes después de que todo esté listo
-    setTimeout(() => this.processPendingLogs(), 0);
   }
 
   private createConsole(): void {
@@ -188,13 +183,9 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
   }
 
   private setupConsoleInterceptors(): void {
-    // Función para agregar líneas de log (mejorada para manejar tabs)
-    const addLogLine = (level: string, msg: string, color: string = '#cfe8ff') => {
-      if (!this.consoleBody) {
-        // Si consoleBody no está listo, guardar en pendientes
-        this.pendingLogs.push({level, msg, color});
-        return;
-      }
+    // Función mejorada para agregar logs - basada en tu código optimizado
+    const addLog = (level: string, msg: string, color: string = '#cfe8ff') => {
+      if (!this.consoleBody) return;
       
       const el = document.createElement('div');
       el.style.cssText = `
@@ -210,36 +201,18 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
         font-family: ui-monospace, Menlo, 'Courier New', monospace;
       `;
       
-      // Formatear mensaje con tabs preservados
       const timestamp = new Date().toLocaleTimeString();
-      const formattedMsg = msg.replace(/\t/g, '    '); // Convertir tabs a espacios para mejor visualización
+      const formattedMsg = msg.replace(/\t/g, '    ');
       el.textContent = `[${timestamp}] ${level} — ${formattedMsg}`;
       
       this.consoleBody.appendChild(el);
       this.consoleBody.scrollTop = this.consoleBody.scrollHeight;
       
-      // Auto-mostrar cuando pase algo
+      // Auto-mostrar
       this.show();
     };
 
-    // Guardar referencias originales INMEDIATAMENTE
-    this.originalConsole = {
-      log: console.log.bind(console),
-      warn: console.warn.bind(console),
-      error: console.error.bind(console),
-      info: console.info.bind(console),
-      debug: console.debug.bind(console),
-      trace: console.trace.bind(console),
-      table: console.table.bind(console),
-      group: console.group.bind(console),
-      groupEnd: console.groupEnd.bind(console),
-      time: console.time.bind(console),
-      timeEnd: console.timeEnd.bind(console),
-      count: console.count.bind(console),
-      clear: console.clear.bind(console)
-    };
-
-    // Función helper para formatear argumentos
+    // Formatear argumentos - versión optimizada de tu código
     const formatArgs = (args: any[]): string => {
       return args.map(arg => {
         if (typeof arg === 'object' && arg !== null) {
@@ -253,65 +226,40 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
       }).join(' ');
     };
 
-    // Interceptar TODOS los métodos de console INMEDIATAMENTE
+    // Guardar originales - usando tu estructura más limpia
+    this.originalConsole = {
+      log: console.log.bind(console),
+      warn: console.warn.bind(console),
+      error: console.error.bind(console),
+      info: console.info.bind(console),
+      debug: console.debug.bind(console),
+      clear: console.clear.bind(console)
+    };
+
+    // Interceptar console methods - usando tu implementación más eficiente
     console.log = (...args: any[]) => {
       this.originalConsole.log(...args);
-      addLogLine('LOG', formatArgs(args), '#87ceeb');
+      addLog('LOG', formatArgs(args), '#87ceeb');
     };
 
     console.warn = (...args: any[]) => {
       this.originalConsole.warn(...args);
-      addLogLine('WARN', formatArgs(args), '#ffd666');
+      addLog('WARN', formatArgs(args), '#ffd666');
     };
 
     console.error = (...args: any[]) => {
       this.originalConsole.error(...args);
-      addLogLine('ERROR', formatArgs(args), '#ff9aa2');
+      addLog('ERROR', formatArgs(args), '#ff6b6b');
     };
 
     console.info = (...args: any[]) => {
       this.originalConsole.info(...args);
-      addLogLine('INFO', formatArgs(args), '#98fb98');
+      addLog('INFO', formatArgs(args), '#98fb98');
     };
 
     console.debug = (...args: any[]) => {
       this.originalConsole.debug(...args);
-      addLogLine('DEBUG', formatArgs(args), '#dda0dd');
-    };
-
-    console.trace = (...args: any[]) => {
-      this.originalConsole.trace(...args);
-      addLogLine('TRACE', formatArgs(args), '#f0e68c');
-    };
-
-    console.table = (data: any, columns?: string[]) => {
-      this.originalConsole.table(data, columns);
-      addLogLine('TABLE', `Table data: ${formatArgs([data])}`, '#deb887');
-    };
-
-    console.group = (...args: any[]) => {
-      this.originalConsole.group(...args);
-      addLogLine('GROUP', `▼ ${formatArgs(args)}`, '#ffa07a');
-    };
-
-    console.groupEnd = () => {
-      this.originalConsole.groupEnd();
-      addLogLine('GROUP', '▲ Group End', '#ffa07a');
-    };
-
-    console.time = (label?: string) => {
-      this.originalConsole.time(label);
-      addLogLine('TIME', `Timer started: ${label || 'default'}`, '#20b2aa');
-    };
-
-    console.timeEnd = (label?: string) => {
-      this.originalConsole.timeEnd(label);
-      addLogLine('TIME', `Timer ended: ${label || 'default'}`, '#20b2aa');
-    };
-
-    console.count = (label?: string) => {
-      this.originalConsole.count(label);
-      addLogLine('COUNT', `Count: ${label || 'default'}`, '#ff6347');
+      addLog('DEBUG', formatArgs(args), '#dda0dd');
     };
 
     console.clear = () => {
@@ -319,167 +267,61 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
       if (this.consoleBody) {
         this.consoleBody.innerHTML = '';
       }
-      addLogLine('CLEAR', 'Console cleared', '#778899');
     };
 
-    // Interceptar fetch
+    // Interceptar fetch - usando tu versión mejorada
     this.originalFetch = window.fetch.bind(window);
     window.fetch = async (...args: Parameters<typeof fetch>) => {
       const url = typeof args[0] === 'string' ? args[0] : args[0].url;
-      addLogLine('NETWORK', `Fetch request: ${url}`, '#40e0d0');
+      addLog('NETWORK', `Fetch: ${url}`, '#40e0d0');
       
       try {
         const response = await this.originalFetch(...args);
-        const status = response.status;
-        const color = status >= 200 && status < 300 ? '#90ee90' : '#ff6b6b';
-        addLogLine('NETWORK', `Fetch response: ${url} (${status})`, color);
+        const isOk = response.status >= 200 && response.status < 300;
+        addLog('NETWORK', `Response: ${url} (${response.status})`, isOk ? '#90ee90' : '#ff6b6b');
         return response;
       } catch (error) {
-        addLogLine('ERROR', `Fetch failed: ${url} - ${error}`, '#ff4444');
+        addLog('ERROR', `Fetch failed: ${url} — ${error}`, '#ff6b6b');
         throw error;
       }
     };
-
-    // Interceptar XMLHttpRequest
-    this.originalXHROpen = XMLHttpRequest.prototype.open;
-    this.originalXHRSend = XMLHttpRequest.prototype.send;
-    
-    XMLHttpRequest.prototype.open = function(method: string, url: string | URL, ...args: any[]) {
-      (this as any)._url = url;
-      (this as any)._method = method;
-      return this.originalXHROpen.call(this, method, url, ...args);
-    };
-    
-    XMLHttpRequest.prototype.send = function(...args: any[]) {
-      const url = (this as any)._url;
-      const method = (this as any)._method;
-      addLogLine('NETWORK', `XHR ${method}: ${url}`, '#40e0d0');
-      
-      this.addEventListener('load', () => {
-        const status = this.status;
-        const color = status >= 200 && status < 300 ? '#90ee90' : '#ff6b6b';
-        addLogLine('NETWORK', `XHR response: ${url} (${status})`, color);
-      });
-      
-      this.addEventListener('error', () => {
-        addLogLine('ERROR', `XHR failed: ${url}`, '#ff4444');
-      });
-      
-      return this.originalXHRSend.call(this, ...args);
-    };
-  }
-
-  private processPendingLogs(): void {
-    if (this.pendingLogs.length > 0 && this.consoleBody) {
-      this.pendingLogs.forEach(log => {
-        this.addLine(log.level, log.msg, log.color);
-      });
-      this.pendingLogs = [];
-    }
   }
 
   private setupEventListeners(): void {
-    // 1) Errores JS "reales" (runtime errors) - Mejorado para capturar más tipos
-    window.addEventListener('error', (ev) => {
-      const isResource = ev.target && ev.target !== window && ((ev.target as any).src || (ev.target as any).href);
-      if (isResource) {
-        const url = (ev.target as any).src || (ev.target as any).href || '(desconocido)';
-        this.addLine('ERROR', `Fallo de recurso: ${url}`, '#ff4444');
+    // Usar tu implementación mejorada de detección de errores
+    
+    // 1) Errores JS (incluye stack, archivo, línea, col) - tu versión optimizada
+    window.addEventListener('error', (event) => {
+      // Errores de recurso (img/script/link) vs JS
+      if (event.target && event.target !== window) {
+        const element = event.target as any;
+        const url = element.src || element.href || '(recurso desconocido)';
+        this.addLine('ERROR', `Resource failed: ${url}`, '#ff6b6b');
       } else {
-        // Error de JavaScript
-        const where = ev.filename ? `${ev.filename}:${ev.lineno}:${ev.colno}` : 'unknown location';
-        const stack = ev.error && ev.error.stack ? `\n${ev.error.stack}` : '';
-        const errorName = ev.error && ev.error.name ? `${ev.error.name}: ` : '';
-        this.addLine('ERROR', `${errorName}${ev.message} @ ${where}${stack}`, '#ff4444');
+        const filename = event.filename || '(desconocido)';
+        const message = event.message || 'Error';
+        const location = `${filename}:${event.lineno || 0}:${event.colno || 0}`;
+        const stack = event.error?.stack ? `\n${event.error.stack}` : '';
+        this.addLine('ERROR', `${message}\n  at ${location}${stack}`, '#ff6b6b');
       }
-    }, true);
+    }, true); // capture=true para no perder errores de recursos
 
-    // 2) Promesas no manejadas
-    window.addEventListener('unhandledrejection', (ev) => {
-      const reason = ev.reason instanceof Error ? (ev.reason.stack || ev.reason.message) : JSON.stringify(ev.reason);
-      this.addLine('ERROR', `UnhandledRejection: ${reason}`, '#ff4444');
+    // 2) Promesas no manejadas - tu implementación mejorada
+    window.addEventListener('unhandledrejection', (event) => {
+      let message = 'Unhandled Promise Rejection';
+      if (event.reason instanceof Error) {
+        message = `${event.reason.name}: ${event.reason.message}${event.reason.stack ? `\n${event.reason.stack}` : ''}`;
+      } else {
+        try {
+          message = JSON.stringify(event.reason);
+        } catch {
+          message = String(event.reason);
+        }
+      }
+      this.addLine('ERROR', message, '#ff6b6b');
     });
 
-    // 3) Interceptar errores de evaluación de código
-    const originalEval = window.eval;
-    window.eval = (code: string) => {
-      try {
-        return originalEval.call(window, code);
-      } catch (error) {
-        this.addLine('ERROR', `Eval Error: ${error}`, '#ff4444');
-        throw error;
-      }
-    };
-
-    // 4) Interceptar Function constructor para errores dinámicos
-    const originalFunction = window.Function;
-    window.Function = function(...args: any[]) {
-      try {
-        return originalFunction.apply(this, args);
-      } catch (error) {
-        // No mostrar en consola aquí para evitar duplicados
-        throw error;
-      }
-    } as any;
-
-    // 5) Deprecations / Interventions
-    if ('ReportingObserver' in window) {
-      const ro = new ReportingObserver((reports) => {
-        for (const r of reports) {
-          this.addLine('WARN', `ReportingObserver: ${r.type} — ${(r.body as any)?.message || ''}`, '#ffaa44');
-        }
-      }, { types: ['deprecation', 'intervention'], buffered: true });
-      ro.observe();
-    }
-
-    // 6) Métricas de recursos fallidos vía PerformanceObserver
-    if ('PerformanceObserver' in window) {
-      try {
-        const po = new PerformanceObserver((list) => {
-          for (const entry of list.getEntries()) {
-            const perfEntry = entry as any;
-            if (perfEntry.initiatorType && perfEntry.duration === 0 && perfEntry.responseStatus === 0) {
-              this.addLine('WARN', `Posible fallo de carga: ${perfEntry.name} (${perfEntry.initiatorType})`, '#ffaa44');
-            }
-          }
-        });
-        po.observe({ type: 'resource', buffered: true });
-      } catch (e) {
-        // Silenciar errores de PerformanceObserver
-      }
-    }
-
-    // 7) Interceptar setTimeout y setInterval para errores en callbacks
-    const originalSetTimeout = window.setTimeout;
-    const originalSetInterval = window.setInterval;
-
-    window.setTimeout = function(callback: any, delay?: number, ...args: any[]) {
-      const wrappedCallback = typeof callback === 'function' ? function() {
-        try {
-          return callback.apply(this, arguments);
-        } catch (error) {
-          // Los errores en setTimeout ya son capturados por el event listener 'error'
-          // pero asegurémonos de que se propaguen
-          throw error;
-        }
-      } : callback;
-      
-      return originalSetTimeout.call(window, wrappedCallback, delay, ...args);
-    };
-
-    window.setInterval = function(callback: any, delay?: number, ...args: any[]) {
-      const wrappedCallback = typeof callback === 'function' ? function() {
-        try {
-          return callback.apply(this, arguments);
-        } catch (error) {
-          throw error;
-        }
-      } : callback;
-      
-      return originalSetInterval.call(window, wrappedCallback, delay, ...args);
-    };
-
-    // 8) Atajo de teclado para abrir/cerrar con "~" o "`"
+    // Atajo de teclado para toggle
     document.addEventListener('keydown', (e) => {
       if (e.key === '`' || e.key === '~') {
         e.preventDefault();
@@ -487,29 +329,14 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
       }
     });
 
-    // 9) Interceptar addEventListener para errores en event handlers
-    const originalAddEventListener = EventTarget.prototype.addEventListener;
-    EventTarget.prototype.addEventListener = function(type: string, listener: any, options?: any) {
-      if (typeof listener === 'function') {
-        const wrappedListener = function(event: Event) {
-          try {
-            return listener.call(this, event);
-          } catch (error) {
-            // Los errores en event listeners ya son capturados por el event listener 'error'
-            throw error;
-          }
-        };
-        return originalAddEventListener.call(this, type, wrappedListener, options);
-      }
-      return originalAddEventListener.call(this, type, listener, options);
-    };
+    // Mensaje inicial de confirmación
+    setTimeout(() => {
+      this.addLine('INFO', 'Console initialized and ready to capture errors. Press F12 to compare with browser console.', '#98fb98');
+    }, 100);
   }
 
   private addLine(level: string, msg: string, color: string = '#cfe8ff'): void {
-    if (!this.consoleBody) {
-      this.pendingLogs.push({level, msg, color});
-      return;
-    }
+    if (!this.consoleBody) return;
     
     const el = document.createElement('div');
     el.style.cssText = `
@@ -532,7 +359,7 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
     this.consoleBody.appendChild(el);
     this.consoleBody.scrollTop = this.consoleBody.scrollHeight;
     
-    // Auto-mostrar cuando pase algo
+    // Auto-mostrar
     if (this.consoleElement && this.consoleElement.hidden) {
       this.show();
     }
@@ -572,6 +399,132 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
     }
   }
 
+  // Método para capturar errores dentro de iframes del mismo origen
+  public attachToFrame(frame: HTMLIFrameElement): void {
+    const w = frame.contentWindow;
+    if (!w) return;
+
+    const onErr = (event: ErrorEvent) => {
+      if (event.target && event.target !== w) {
+        // Error de recurso (imagen, script, etc.)
+        const element: any = event.target;
+        const url = element.src || element.href || 'recurso';
+        this.addLine('ERROR', `[IFRAME] Resource failed: ${url}`, '#ff4444');
+      } else {
+        // Error de JavaScript
+        const file = event.filename || 'unknown';
+        const line = event.lineno || 0;
+        const col = event.colno || 0;
+        const msg = event.message || 'Error';
+        const stack = (event as any).error?.stack || '';
+        this.addLine('ERROR', `[IFRAME] ${msg}\n  at ${file}:${line}:${col}${stack ? '\n' + stack : ''}`, '#ff4444');
+      }
+    };
+
+    const onRej = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      let message = 'Unhandled Promise Rejection';
+      if (reason instanceof Error) {
+        message = `${reason.name}: ${reason.message}${reason.stack ? '\n' + reason.stack : ''}`;
+      } else {
+        try {
+          message = JSON.stringify(reason);
+        } catch {
+          message = String(reason);
+        }
+      }
+      this.addLine('ERROR', `[IFRAME] ${message}`, '#ff4444');
+    };
+
+    w.addEventListener('error', onErr, true);
+    w.addEventListener('unhandledrejection', onRej);
+    
+    this.addLine('INFO', `Attached error listeners to iframe: ${frame.src || 'about:blank'}`, '#98fb98');
+  }
+
+  // Método para capturar errores en Web Workers
+  public attachToWorker(worker: Worker): void {
+    const log = (level: string, msg: string) => this.addLine(level, `[WORKER] ${msg}`, '#ff4444');
+    
+    worker.addEventListener('error', (event) => {
+      log('ERROR', `Worker error: ${event.message} at ${event.filename}:${event.lineno}:${event.colno}`);
+    });
+    
+    worker.addEventListener('messageerror', (event) => {
+      log('ERROR', `Worker messageerror: ${String((event as any).data)}`);
+    });
+    
+    // Opcional: proxy postMessage para loggear comunicación
+    const originalPostMessage = worker.postMessage.bind(worker);
+    worker.postMessage = (...args: any[]) => {
+      this.addLine('WORKER', 'postMessage enviado', '#40e0d0');
+      return originalPostMessage(...args);
+    };
+    
+    this.addLine('INFO', 'Attached error listeners to Web Worker', '#98fb98');
+  }
+
+  // Método para escuchar mensajes de iframes de diferente origen
+  public setupCrossOriginIframeListener(): void {
+    window.addEventListener('message', (event) => {
+      // Verificar que el mensaje viene de un iframe y contiene información de error
+      if (event.data && typeof event.data === 'object' && event.data.type === 'console-error') {
+        const { level, message, color } = event.data;
+        this.addLine(level || 'ERROR', `[CROSS-ORIGIN] ${message}`, color || '#ff4444');
+      }
+    });
+    
+    this.addLine('INFO', 'Cross-origin iframe error listener setup complete', '#98fb98');
+  }
+
+  // Método para inyectar el listener en iframes de diferente origen (código para el iframe)
+  public getIframeErrorScript(): string {
+    return `
+      (function() {
+        const sendToParent = (level, message, color = '#ff4444') => {
+          if (window.parent !== window) {
+            window.parent.postMessage({
+              type: 'console-error',
+              level: level,
+              message: message,
+              color: color
+            }, '*');
+          }
+        };
+
+        window.addEventListener('error', (event) => {
+          if (event.target && event.target !== window) {
+            const element = event.target;
+            const url = element.src || element.href || 'recurso';
+            sendToParent('ERROR', \`Resource failed: \${url}\`);
+          } else {
+            const file = event.filename || 'unknown';
+            const line = event.lineno || 0;
+            const col = event.colno || 0;
+            const msg = event.message || 'Error';
+            const stack = event.error?.stack || '';
+            sendToParent('ERROR', \`\${msg}\\n  at \${file}:\${line}:\${col}\${stack ? '\\n' + stack : ''}\`);
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', (event) => {
+          const reason = event.reason;
+          let message = 'Unhandled Promise Rejection';
+          if (reason instanceof Error) {
+            message = \`\${reason.name}: \${reason.message}\${reason.stack ? '\\n' + reason.stack : ''}\`;
+          } else {
+            try {
+              message = JSON.stringify(reason);
+            } catch {
+              message = String(reason);
+            }
+          }
+          sendToParent('ERROR', message);
+        });
+      })();
+    `;
+  }
+
   public destroy(): void {
     // Restaurar funciones originales
     if (this.originalConsole) {
@@ -580,14 +533,6 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
     
     if (this.originalFetch) {
       window.fetch = this.originalFetch;
-    }
-    
-    if (this.originalXHROpen) {
-      XMLHttpRequest.prototype.open = this.originalXHROpen;
-    }
-    
-    if (this.originalXHRSend) {
-      XMLHttpRequest.prototype.send = this.originalXHRSend;
     }
 
     // Remover elemento del DOM
@@ -600,6 +545,5 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
     this.consoleBody = null;
     this.clearButton = null;
     this.resizeHandle = null;
-    this.pendingLogs = [];
   }
 }
