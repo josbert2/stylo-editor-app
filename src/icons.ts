@@ -197,6 +197,39 @@ const ICON_TEMPLATES = {
   <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
   <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
 </svg>`.trim(),
+
+  configViewer: (size: number, strokeWidth: number, className = '') => `
+<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24"
+  fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"
+  class="icon icon-tabler icon-tabler-palette ${className}">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M12 21a9 9 0 0 1 0 -18c5 0 9 4 9 9a4.5 4.5 0 0 1 -4.5 4.5h-2.5a2 2 0 0 0 -2 2a1.5 1.5 0 0 1 -3 0a9 9 0 0 1 0 -9" />
+  <path d="M8.5 10.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+  <path d="M12.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+  <path d="M16.5 10.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+</svg>`.trim(),
+
+  configViewer: (size: number, strokeWidth: number, className = '') => `
+<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24"
+  fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"
+  class="icon icon-tabler icon-tabler-palette ${className}">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M12 21a9 9 0 0 1 0 -18c5 0 9 4 9 9a4.5 4.5 0 0 1 -4.5 4.5h-2.5a2 2 0 0 0 -2 2a1.5 1.5 0 0 1 -3 0a9 9 0 0 1 0 -9" />
+  <path d="M8.5 10.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+  <path d="M12.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+  <path d="M16.5 10.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+</svg>`.trim(),
+
+  configViewer: (size: number, strokeWidth: number, className = '') => `
+<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24"
+  fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"
+  class="icon icon-tabler icon-tabler-palette ${className}">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M12 21a9 9 0 0 1 0 -18c5 0 9 4 9 9a4.5 4.5 0 0 1 -4.5 4.5h-2.5a2 2 0 0 0 -2 2a1.5 1.5 0 0 1 -3 0a9 9 0 0 1 0 -9" />
+  <path d="M8.5 10.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+  <path d="M12.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+  <path d="M16.5 10.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+</svg>`.trim(),
 } as const;
 
 type IconName = keyof typeof ICON_TEMPLATES;

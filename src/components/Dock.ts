@@ -25,6 +25,11 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   private pauseButton: FancyButton | null = null;
   private jsConsole: JSConsole | null = null;
   private tailwindInspector: TailwindInspector | null = null;
+  private tailwindConfigViewer: any | null = null;
+  private htmlNavigator: HTMLNavigator | null = null;
+  private assetManager: AssetManager | null = null;
+  private ruler: Ruler | null = null;
+  private isPaused: boolean = false;
 
   constructor(container: HTMLElement) {
     super();
@@ -83,6 +88,18 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
             <div class="inner" style="background:#212121">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7.29C13.89,7.88 14.5,8.9 14.5,10.05V12A2.5,2.5 0 0,1 12,14.5A2.5,2.5 0 0,1 9.5,12V10.05C9.5,8.9 10.11,7.88 11,7.29V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M12,3.5A0.5,0.5 0 0,0 11.5,4A0.5,0.5 0 0,0 12,4.5A0.5,0.5 0 0,0 12.5,4A0.5,0.5 0 0,0 12,3.5M12,8.5A1.5,1.5 0 0,0 10.5,10.05V12A1.5,1.5 0 0,0 12,13.5A1.5,1.5 0 0,0 13.5,12V10.05A1.5,1.5 0 0,0 12,8.5Z" />
+              </svg>
+            </div>
+          </button>
+
+          <!-- Tailwind Config Viewer -->
+          <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="tailwind-config-viewer" data-tooltip="Tailwind Config Viewer">
+            <div class="inner" style="background:#212121">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21a9 9 0 0 1 0 -18c5 0 9 4 9 9a4.5 4.5 0 0 1 -4.5 4.5h-2.5a2 2 0 0 0 -2 2a1.5 1.5 0 0 1 -3 0a9 9 0 0 1 0 -9" />
+                <path d="M8.5 10.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                <path d="M12.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                <path d="M16.5 10.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
               </svg>
             </div>
           </button>
@@ -335,6 +352,9 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
       case 'tailwind-inspector':
         this.toggleTailwindInspector();
         break;
+      case 'tailwind-config-viewer':
+        this.toggleTailwindConfigViewer();
+        break;
       case 'console-js':
         this.toggleJSConsole();
         break;
@@ -361,6 +381,71 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
       case 'close-editor':
         this.emit('dock:close-editor');
         break;
+    }
+  }
+
+  private async toggleTailwindConfigViewer(): Promise<void> {
+    if (!this.tailwindConfigViewer) {
+      // Lazy import del TailwindConfigViewer
+      const { TailwindConfigViewer } = await import('./TailwindConfigViewer');
+      
+      // Calcular posición cerca del botón del config viewer
+      const configViewerBtn = this.dockElement?.querySelector('[data-action="tailwind-config-viewer"]') as HTMLElement;
+      let position = { x: window.innerWidth / 2 - 300, y: window.innerHeight / 2 - 250 };
+      
+      if (configViewerBtn && this.dockElement) {
+        const btnRect = configViewerBtn.getBoundingClientRect();
+        const dockRect = this.dockElement.getBoundingClientRect();
+        
+        // Posicionar el viewer arriba del dock, centrado con el botón
+        position = {
+          x: btnRect.left + (btnRect.width / 2) - 300, // Centrar con el botón
+          y: dockRect.top - 520 // Arriba del dock con espacio suficiente
+        };
+        
+        // Ajustar si se sale de la pantalla horizontalmente
+        if (position.x < 20) position.x = 20;
+        if (position.x + 600 > window.innerWidth - 20) position.x = window.innerWidth - 620;
+        
+        // Ajustar si se sale de la pantalla verticalmente
+        if (position.y < 20) {
+          position.y = btnRect.bottom + 10; // Si no cabe arriba, ponerla abajo
+        }
+      }
+      
+      this.tailwindConfigViewer = new TailwindConfigViewer(this.container, { position });
+      
+      // Escuchar eventos del config viewer
+      this.tailwindConfigViewer.on('tailwind-config-viewer:hidden', () => {
+        this.updateConfigViewerButtonState(false);
+      });
+
+      this.tailwindConfigViewer.on('tailwind-config-viewer:shown', () => {
+        this.updateConfigViewerButtonState(true);
+      });
+    }
+    
+    if (this.tailwindConfigViewer.isShown()) {
+      this.tailwindConfigViewer.hide();
+      this.updateConfigViewerButtonState(false);
+    } else {
+      this.tailwindConfigViewer.show();
+      this.updateConfigViewerButtonState(true);
+    }
+  }
+
+  private updateConfigViewerButtonState(active: boolean): void {
+    const configViewerBtn = this.dockElement?.querySelector('[data-action="tailwind-config-viewer"]') as HTMLElement;
+    if (configViewerBtn) {
+      if (active) {
+        configViewerBtn.classList.add('active');
+        configViewerBtn.style.background = 'rgba(59, 130, 246, 0.2)';
+        configViewerBtn.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+      } else {
+        configViewerBtn.classList.remove('active');
+        configViewerBtn.style.background = '';
+        configViewerBtn.style.borderColor = '';
+      }
     }
   }
 
@@ -697,6 +782,11 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     if (this.tailwindInspector) {
       this.tailwindInspector.destroy();
       this.tailwindInspector = null;
+    }
+
+    if (this.tailwindConfigViewer) {
+      this.tailwindConfigViewer.destroy();
+      this.tailwindConfigViewer = null;
     }
 
     if (this.dockElement) {
