@@ -144,7 +144,7 @@ export interface PropertySection {
 }
 
 // Tipos para pestañas
-export type TabType = 'design' | 'code' | 'html' | 'chat';
+export type TabType = 'design' | 'code' | 'html' | 'chat' | 'tailwind';
 
 export interface PanelOptions {
   minimized?: boolean;
@@ -197,6 +197,7 @@ export interface StyloEditorEvents {
   'dock:color-applied': string;
   'dock:ruler': void;
   'dock:assets': void;
+  'dock:tailwind': void;
   'ruler:activated': void;
   'ruler:deactivated': void;
   'ruler:measurement': any; // RulerMeasurement from Ruler component

@@ -7,6 +7,7 @@ import { Ruler } from './Ruler';
 import { AssetManager } from './AssetManager';
 import { HTMLNavigatorWindow } from './HTMLNavigatorWindow';
 import { JSConsole } from './JSConsole';
+import { TailwindInspector } from './TailwindInspector';
 
 import { FancyButton } from '../components/FancyButton';
 
@@ -23,6 +24,7 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   private htmlNavigatorWindow: HTMLNavigatorWindow | null = null;
   private pauseButton: FancyButton | null = null;
   private jsConsole: JSConsole | null = null;
+  private tailwindInspector: TailwindInspector | null = null;
 
   constructor(container: HTMLElement) {
     super();
@@ -56,7 +58,7 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
         <div class="dock-main-controls" style="display: flex;">
           
           <!-- Pause/Play -->
-         
+          <div id="fancy-pause-button" style="margin-right: 8px;"></div>
 
           <!-- CSS Changes -->
           <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="css-changes" data-tooltip="Ver Cambios CSS">
@@ -76,11 +78,20 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
             </div>
           </button>
 
+          <!-- Tailwind Inspector -->
+          <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="tailwind-inspector" data-tooltip="Tailwind Inspector">
+            <div class="inner" style="background:#212121">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7.29C13.89,7.88 14.5,8.9 14.5,10.05V12A2.5,2.5 0 0,1 12,14.5A2.5,2.5 0 0,1 9.5,12V10.05C9.5,8.9 10.11,7.88 11,7.29V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M12,3.5A0.5,0.5 0 0,0 11.5,4A0.5,0.5 0 0,0 12,4.5A0.5,0.5 0 0,0 12.5,4A0.5,0.5 0 0,0 12,3.5M12,8.5A1.5,1.5 0 0,0 10.5,10.05V12A1.5,1.5 0 0,0 12,13.5A1.5,1.5 0 0,0 13.5,12V10.05A1.5,1.5 0 0,0 12,8.5Z" />
+              </svg>
+            </div>
+          </button>
+
           <!-- Color Palette -->
           <button style="border:none;width:46px;height:46px;" class="dock-tool-btn button-btn-fancy" data-action="color-palette" data-tooltip="Paleta de Colores">
             <div class="inner" style="background:#212121">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.5,12A1.5,1.5 0 0,1 16,10.5A1.5,1.5 0 0,1 17.5,9A1.5,1.5 0 0,1 19,10.5A1.5,1.5 0 0,1 17.5,12M14.5,8A1.5,1.5 0 0,1 13,6.5A1.5,1.5 0 0,1 14.5,5A1.5,1.5 0 0,1 16,6.5A1.5,1.5 0 0,1 14.5,8M9.5,8A1.5,1.5 0 0,1 8,6.5A1.5,1.5 0 0,1 9.5,5A1.5,1.5 0 0,1 11,6.5A1.5,1.5 0 0,1 9.5,8M6.5,12A1.5,1.5 0 0,1 5,10.5A1.5,1.5 0 0,1 6.5,9A1.5,1.5 0 0,1 8,10.5A1.5,1.5 0 0,1 6.5,12M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A1.5,1.5 0 0,0 13.5,19.5C13.5,19.11 13.35,18.76 13.11,18.5C12.88,18.23 12.73,17.88 12.73,17.5A1.5,1.5 0 0,1 14.23,16H16A5,5 0 0,0 21,11C21,6.58 16.97,3 12,3Z" />
+                <path d="M17.5,12A1.5,1.5 0 0,1 16,10.5A1.5,1.5 0 0,1 17.5,9A1.5,1.5 0 0,1 19,10.5A1.5,1.5 0 0,1 17.5,12M14.5,8A1.5,1.5 0 0,1 13,6.5A1.5,1.5 0 0,1 14.5,5A1.5,1.5 0 0,1 16,6.5A1.5,1.5 0 0,1 14.5,8M9.5,8A1.5,1.5 0 0,1 8,6.5A1.5,1.5 0 0,1 9.5,5A1.5,1.5 0 0,1 11,6.5A1.5,1.5 0 0,1 9.5,8M6.5,12A1.5,1.5 0 0,1 5,10.5A1.5,1.5 0 0,1 6.5,9A1.5,1.5 0 0,1 8,10.5A1.5,1.5 0 0,1 6.5,12M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A1.5,1.5 0 0,0 13.5,19.5C13.5,19.11 13.35,18.76 13.11,18.5C12.88,18.23 12.73,17.88 12.73,17.5A1.5,0.5 0 0,1 14.23,16H16A5,5 0 0,0 21,11C21,6.58 16.97,3 12,3Z" />
               </svg>
             </div>
           </button>
@@ -321,6 +332,9 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
       case 'html-navigator':
         this.toggleHTMLNavigator();
         break;
+      case 'tailwind-inspector':
+        this.toggleTailwindInspector();
+        break;
       case 'console-js':
         this.toggleJSConsole();
         break;
@@ -431,252 +445,87 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     }
   }
 
-  private toggleColorDropper(): void {
-    if (!this.colorDropper) {
-      this.colorDropper = new ColorDropper(this.container, {
-        onColorPicked: (color: string) => {
-          this.emit('dock:color-applied', color);
-          this.updateEyedropperButtonState(false);
+  private toggleAssetManager(): void {
+    if (!this.assetManager) {
+      this.assetManager = new AssetManager(this.container, {
+        onAssetSelected: (asset) => {
+          this.emit('dock:asset-selected', asset);
         },
-        onActivated: () => {
-          this.updateEyedropperButtonState(true);
-        },
-        onDeactivated: () => {
-          this.updateEyedropperButtonState(false);
+        onAssetDeleted: (assetId) => {
+          this.emit('dock:asset-deleted', assetId);
         }
       });
-
-      // Escuchar eventos del color dropper
-      this.colorDropper.on('eyedropper:color-picked', (color: string) => {
-        this.emit('dock:color-applied', color);
+      
+      // Listen to asset manager events
+      this.assetManager.on('asset-manager:opened', () => {
+        this.updateAssetManagerButtonState(true);
+      });
+      
+      this.assetManager.on('asset-manager:closed', () => {
+        this.updateAssetManagerButtonState(false);
       });
     }
-
-    if (this.colorDropper.isActivated()) {
-      this.colorDropper.deactivate();
+    
+    if (this.assetManager.isOpen()) {
+      this.assetManager.hide();
+      this.updateAssetManagerButtonState(false);
     } else {
-      // Usar el método correcto para activar el color dropper
-      this.colorDropper.activate();
+      this.assetManager.show();
+      this.updateAssetManagerButtonState(true);
     }
   }
 
-  private updateEyedropperButtonState(active: boolean): void {
-    if (!this.dockElement) return;
-    
-    const eyedropperBtn = this.dockElement.querySelector('[data-action="eyedropper"]') as HTMLElement;
-    if (eyedropperBtn) {
+  private updateAssetManagerButtonState(active: boolean): void {
+    const assetBtn = this.dockElement?.querySelector('[data-action="assets"], [data-action="asset-manager"]') as HTMLElement;
+    if (assetBtn) {
       if (active) {
-        eyedropperBtn.classList.add('active');
-        eyedropperBtn.style.background = 'rgba(0, 122, 255, 0.3)';
-        eyedropperBtn.style.color = '#4A90E2';
+        assetBtn.classList.add('active');
+        assetBtn.style.background = 'rgba(156, 39, 176, 0.2)';
+        assetBtn.style.borderColor = 'rgba(156, 39, 176, 0.4)';
       } else {
-        eyedropperBtn.classList.remove('active');
-        eyedropperBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-        eyedropperBtn.style.color = 'rgba(255, 255, 255, 0.7)';
+        assetBtn.classList.remove('active');
+        assetBtn.style.background = '';
+        assetBtn.style.borderColor = '';
       }
     }
   }
 
   private toggleRuler(): void {
     if (!this.ruler) {
-      // Crear instancia del ruler
       this.ruler = new Ruler(this.container, {
+        onMeasurement: (measurement) => {
+          this.emit('dock:measurement', measurement);
+        },
         onActivated: () => {
-          console.log('Dock: Ruler activado');
           this.updateRulerButtonState(true);
         },
         onDeactivated: () => {
-          console.log('Dock: Ruler desactivado');
           this.updateRulerButtonState(false);
-        },
-        onMeasurement: (measurement) => {
-          console.log('Dock: Nueva medición:', measurement);
-          // Emitir evento para que otros componentes puedan reaccionar
-          this.emit('dock:ruler-measurement', measurement);
-        },
-        units: 'px',
-        showGrid: false,
-        snapToElements: true
-      });
-
-      // Escuchar eventos del ruler
-      this.ruler.on('ruler:activated', () => {
-        this.emit('dock:ruler');
-      });
-
-      this.ruler.on('ruler:deactivated', () => {
-        // Ruler desactivado - asegurar que el botón se actualice
-        this.updateRulerButtonState(false);
+        }
       });
     }
-
-    // Toggle del ruler
+    
     if (this.ruler.isActivated()) {
-      // Intentar desactivación normal primero
       this.ruler.deactivate();
-      
-      // Si sigue activo después de 100ms, forzar desactivación
-      setTimeout(() => {
-        if (this.ruler?.isActivated()) {
-          console.warn('Dock: Forzando desactivación del Ruler');
-          this.ruler.forceDeactivate();
-        }
-      }, 100);
+      this.updateRulerButtonState(false);
     } else {
-      // Desactivar otras herramientas primero
-      if (this.colorDropper?.isActivated()) {
-        this.colorDropper.deactivate();
-      }
-      
       this.ruler.activate();
+      this.updateRulerButtonState(true);
     }
   }
 
   private updateRulerButtonState(active: boolean): void {
-    const rulerButton = this.dockElement?.querySelector('[data-action="ruler"]') as HTMLElement;
-    if (rulerButton) {
+    const rulerBtn = this.dockElement?.querySelector('[data-action="ruler"]') as HTMLElement;
+    if (rulerBtn) {
       if (active) {
-        rulerButton.style.background = 'rgba(0, 123, 255, 0.3)';
-        rulerButton.style.color = '#007bff';
-        rulerButton.style.transform = 'scale(1.05)';
+        rulerBtn.classList.add('active');
+        rulerBtn.style.background = 'rgba(255, 193, 7, 0.2)';
+        rulerBtn.style.borderColor = 'rgba(255, 193, 7, 0.4)';
       } else {
-        rulerButton.style.background = 'rgba(255, 255, 255, 0.1)';
-        rulerButton.style.color = 'rgba(255, 255, 255, 0.7)';
-        rulerButton.style.transform = 'scale(1)';
+        rulerBtn.classList.remove('active');
+        rulerBtn.style.background = '';
+        rulerBtn.style.borderColor = '';
       }
-    }
-  }
-
-  private toggleAssetManager(): void {
-    if (!this.assetManager) {
-      this.assetManager = new AssetManager(this.container);
-      
-      // Escuchar eventos del Asset Manager
-      this.assetManager.on('asset:selected', (asset) => {
-        this.emit('asset:selected', asset);
-      });
-      
-      this.assetManager.on('asset:uploaded', (asset) => {
-        this.emit('asset:uploaded', asset);
-      });
-      
-      this.assetManager.on('asset:deleted', (assetId) => {
-        this.emit('asset:deleted', assetId);
-      });
-      
-      this.assetManager.on('asset-manager:opened', () => {
-        this.updateAssetManagerButtonState(true);
-        this.emit('asset-manager:opened');
-      });
-      
-      this.assetManager.on('asset-manager:closed', () => {
-        this.updateAssetManagerButtonState(false);
-        this.emit('asset-manager:closed');
-      });
-    }
-
-    if (this.assetManager.isOpen()) {
-      this.assetManager.hide();
-    } else {
-      // Cerrar otras herramientas activas
-      if (this.colorPalette?.isShown()) {
-        this.colorPalette.hide();
-      }
-      if (this.colorDropper?.isActivated()) {
-        this.colorDropper.deactivate();
-      }
-      if (this.ruler?.isActivated()) {
-        this.ruler.deactivate();
-      }
-      
-      this.assetManager.show();
-    }
-  }
-
-  private updateAssetManagerButtonState(active: boolean): void {
-    const assetBtn = this.dockElement?.querySelector('[data-action="assets"]') as HTMLElement;
-    if (assetBtn) {
-      if (active) {
-        assetBtn.style.background = 'rgba(0, 122, 204, 0.2)';
-        assetBtn.style.color = '#007acc';
-      } else {
-        assetBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-        assetBtn.style.color = 'rgba(255, 255, 255, 0.7)';
-      }
-    }
-  }
-
-  private toggleHTMLNavigator(): void {
-    if (!this.htmlNavigatorWindow) {
-      // Calcular posición cerca del botón del HTML Navigator
-      const htmlNavBtn = this.dockElement?.querySelector('[data-action="html-navigator"]') as HTMLElement;
-      let position = { x: window.innerWidth / 2 - 200, y: window.innerHeight / 2 - 250 };
-      
-      if (htmlNavBtn && this.dockElement) {
-        const btnRect = htmlNavBtn.getBoundingClientRect();
-        const dockRect = this.dockElement.getBoundingClientRect();
-        
-        // Posicionar la ventana arriba del dock, centrada con el botón
-        position = {
-          x: btnRect.left + (btnRect.width / 2) - 200, // Centrar con el botón (200 es la mitad del ancho de la ventana)
-          y: dockRect.top - 520 // Arriba del dock con espacio suficiente
-        };
-        
-        // Ajustar si se sale de la pantalla horizontalmente
-        if (position.x < 20) position.x = 20;
-        if (position.x + 400 > window.innerWidth - 20) position.x = window.innerWidth - 420;
-        
-        // Ajustar si se sale de la pantalla verticalmente
-        if (position.y < 20) {
-          position.y = btnRect.bottom + 10; // Si no cabe arriba, ponerla abajo
-        }
-      }
-      
-      this.htmlNavigatorWindow = new HTMLNavigatorWindow(this.container, { position });
-      
-      // Escuchar eventos del HTML Navigator
-      this.htmlNavigatorWindow.on('html-navigator:element-selected', (element: HTMLElement) => {
-        this.emit('dock:element-selected', element);
-      });
-      
-      this.htmlNavigatorWindow.on('html-navigator:hidden', () => {
-        this.updateHTMLNavigatorButtonState(false);
-      });
-    }
-    
-    if (this.htmlNavigatorWindow.isShown()) {
-      this.htmlNavigatorWindow.hide();
-      this.updateHTMLNavigatorButtonState(false);
-    } else {
-      // Recalcular posición cada vez que se muestra
-      const htmlNavBtn = this.dockElement?.querySelector('[data-action="html-navigator"]') as HTMLElement;
-      if (htmlNavBtn && this.dockElement) {
-        const btnRect = htmlNavBtn.getBoundingClientRect();
-        const dockRect = this.dockElement.getBoundingClientRect();
-        
-        let position = {
-          x: btnRect.left + (btnRect.width / 2) - 200,
-          y: dockRect.top - 520
-        };
-        
-        // Ajustar si se sale de la pantalla
-        if (position.x < 20) position.x = 20;
-        if (position.x + 400 > window.innerWidth - 20) position.x = window.innerWidth - 420;
-        if (position.y < 20) position.y = btnRect.bottom + 10;
-        
-        this.htmlNavigatorWindow.show(position);
-      } else {
-        this.htmlNavigatorWindow.show();
-      }
-      this.updateHTMLNavigatorButtonState(true);
-    }
-  }
-
-  private updateHTMLNavigatorButtonState(active: boolean): void {
-    const htmlNavBtn = this.dockElement?.querySelector('[data-action="html-navigator"]') as HTMLElement;
-    if (htmlNavBtn) {
-      htmlNavBtn.style.background = active ? 'rgba(33, 150, 243, 0.2)' : 'rgba(255, 255, 255, 0.1)';
-      htmlNavBtn.style.color = active ? 'rgba(33, 150, 243, 0.9)' : 'rgba(255, 255, 255, 0.7)';
     }
   }
 
@@ -843,6 +692,11 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     if (this.jsConsole) {
       this.jsConsole.destroy();
       this.jsConsole = null;
+    }
+
+    if (this.tailwindInspector) {
+      this.tailwindInspector.destroy();
+      this.tailwindInspector = null;
     }
 
     if (this.dockElement) {

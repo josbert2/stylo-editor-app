@@ -4,6 +4,7 @@ import type { StyloEditorEvents } from '../types';
 export interface JSConsoleOptions {
   position?: { x: number; y: number };
   onClose?: () => void;
+  autoShow?: boolean; // Nueva opción para controlar el auto-show
 }
 
 export class JSConsole extends EventEmitter<StyloEditorEvents> {
@@ -22,10 +23,13 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
   private initialHeight: number = 180;
   private errorHandler: ((event: ErrorEvent) => void) | null = null;
   private rejectionHandler: ((event: PromiseRejectionEvent) => void) | null = null;
+  private autoShow: boolean = false; // Nueva propiedad para controlar el auto-show
+  
   constructor(container: HTMLElement, options: JSConsoleOptions = {}) {
     super();
     this.container = container;
     this.position = options.position || { x: 0, y: 0 };
+    this.autoShow = options.autoShow ?? false; // Por defecto false
     
     this.createConsole();
     this.setupConsoleInterceptors();
@@ -211,7 +215,7 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
       this.consoleBody.scrollTop = this.consoleBody.scrollHeight;
       
       // Auto-mostrar
-      this.show();
+      //this.show();
     };
 
     // Formatear argumentos - versión optimizada de tu código
@@ -532,8 +536,10 @@ export class JSConsole extends EventEmitter<StyloEditorEvents> {
     
     console.log(`[JSConsole] Line added successfully. Total lines: ${this.consoleBody.children.length}`);
     
-    // Auto-mostrar
-    this.show();
+    // Solo auto-mostrar si está habilitado
+    if (this.autoShow) {
+      this.show();
+    }
   }
 
   public show(): void {

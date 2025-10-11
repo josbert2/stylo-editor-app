@@ -21,7 +21,21 @@
 body{
   background-color: rgb(35, 35, 35);
 }
+.stylo-panel{
+  --button-shadow-opacity: 0;
+  --button-shadow-spread: 0;
+  --button-bg-opacity: 0;
+  --button-after-opacity: 0;
+  --btn-border-color: rgb(255 255 255 / 5%);
+  --bg-container: hsl(0deg 0% 10%);
+  --bg-button: var(--bg-container);
+  --container-border-color: rgb(255 255 255 / 8%);
 
+  box-shadow: 0 6px 12px -6px var(--container-box-shadow-color);
+  background: var(--bg-container);
+  
+  border: 1px solid var(--container-border-color);
+}
 /* Tooltip Styles */
 .stylo-tooltip {
   position: absolute;
@@ -346,4 +360,111 @@ button.button-btn-fancy .inner {
 }
  button.button-btn-fancy .inner {
     box-shadow: inset 0 calc(var(--btn-inner-shadow) * 2px) calc(var(--btn-inner-shadow) * 3px) rgba(255, 255, 255, 0.01), inset 0 calc(var(--btn-inner-shadow) * -2px) calc(var(--btn-inner-shadow) * 3px) rgba(0, 0, 0, 0.25);
+}
+
+.panel-tabs{
+  --button-shadow-opacity: 0;
+  --button-shadow-spread: 0;
+  --button-bg-opacity: 0;
+  --button-after-opacity: 0;
+  --btn-border-color: rgb(255 255 255 / 5%);
+  --bg-container: hsl(0deg 0% 10%);
+  --bg-button: var(--bg-container);
+  background: var(--bg-container);
+  border: 1px solid var(--container-border-color);
+}
+.fancy-wfull .inner{
+    background: transparent !important;
+    box-shadow: none !important;
+    border: transparent !important;
+        background: transparent;
+    box-shadow: unset !important ;
+}
+.fancy-wfull{
+  width:100%;
+  border: none;
+  background: transparent;
+  border-radius: 16px;
+  --coord-x: 0;
+  --coord-y: 0;
+  transition: --coord-x 0.075s linear, --coord-y 0.075s linear;
+}
+
+.fancy-wfull .inner{
+  width: 100% !important;
+  border-radius: 16px !important;
+}
+.fancy-wfull.active .inner{
+  background-color: #232323 !important;
+  transition: all 0.3s ease, background-color 0.3s ease;
+}
+
+.button-btn-fancy.active{
+  outline: 1px solid var(--btn-border-color);
+  transition: outline 0.3s ease;
+}
+
+.fancy-wfull.active svg {
+  filter: drop-shadow(0 0 8px rgba(147, 51, 234, 0.6));
+  transition: filter 0.3s ease;
+}
+
+.fancy-wfull svg{
+  width: 17px;
+  height: 17px;
+}
+
+.fancy-wfull.active svg path {
+  stroke: #B794F6;
+  stroke-width: 1.8;
+  filter: brightness(1.2);
+  transition: all 0.3s ease;
+}
+
+.fancy-wfull.active .inner {
+  color: #B794F6;
+  text-shadow: 0 0 8px rgba(183, 148, 246, 0.4);
+  transition: all 0.3s ease, color 0.3s ease, text-shadow 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.fancy-wfull.active .inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: radial-gradient(
+    circle at calc(var(--coord-x) * 1px) calc(var(--coord-y) * 1px),
+    rgba(183, 148, 246, 0.15) 0%,
+    rgba(183, 148, 246, 0.08) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.fancy-wfull.active:hover .inner::before {
+  opacity: 1;
+}
+
+.fancy-wfull.active:hover .inner {
+  color: #4AEDFF;
+  text-shadow: 0 0 12px rgba(74, 237, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+.fancy-wfull.active:hover svg {
+  filter: drop-shadow(0 0 12px rgba(74, 237, 255, 0.8));
+}
+
+.fancy-wfull.active:hover svg path {
+  stroke: #4AEDFF;
+  filter: brightness(1.4);
+}
+
+button.button-btn-fancy.fancy-wfull .inner {
+  height: 43px;
 }
