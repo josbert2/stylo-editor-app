@@ -282,7 +282,7 @@ export class TransformPanel {
 
     // Crear opciones
     dropdown.innerHTML = options.map(opt => `
-      <div class="px-3 py-2 hover:bg-[#3a3a3a] cursor-pointer text-xs text-white" data-option="${opt}">
+      <div class="cc:px-3 cc:py-2 hover:cc:bg-white/10 cc:cursor-pointer cc:text-xs cc:text-white cc:transition-colors" data-option="${opt}">
         ${opt}
       </div>
     `).join('');
@@ -292,7 +292,7 @@ export class TransformPanel {
     const containerRect = this.container.getBoundingClientRect();
     dropdown.style.left = `${rect.left - containerRect.left}px`;
     dropdown.style.top = `${rect.bottom - containerRect.top}px`;
-    dropdown.classList.remove('hidden');
+    dropdown.classList.remove('cc:hidden');
 
     // Event listeners para opciones
     const optionElements = dropdown.querySelectorAll('[data-option]');
@@ -301,7 +301,7 @@ export class TransformPanel {
         const value = (opt as HTMLElement).dataset.option;
         if (value) {
           onSelect(value);
-          dropdown.classList.add('hidden');
+          dropdown.classList.add('cc:hidden');
         }
       });
     });
@@ -309,7 +309,7 @@ export class TransformPanel {
     // Cerrar dropdown al hacer click fuera
     const closeDropdown = (e: MouseEvent) => {
       if (!dropdown.contains(e.target as Node) && !button.contains(e.target as Node)) {
-        dropdown.classList.add('hidden');
+        dropdown.classList.add('cc:hidden');
         document.removeEventListener('click', closeDropdown);
       }
     };
