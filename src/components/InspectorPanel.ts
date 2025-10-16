@@ -12,6 +12,7 @@ import { TooltipManager } from './TooltipManager';
 import { ScrollArea } from './ScrollArea';
 import { Dock } from './Dock';
 import { HTMLNavigator } from './HTMLNavigator';
+import { TransformPanel, type TransformProperties } from './TransformPanel';
 
 export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private container: HTMLElement;
@@ -28,6 +29,7 @@ export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private scrollArea: ScrollArea | null = null;
   private dock: Dock | null = null;
   private htmlNavigator: HTMLNavigator | null = null;
+  private transformPanel: TransformPanel | null = null;
   
   // Propiedades para mejorar el drag
   private dragThrottleId: number | null = null;
@@ -391,6 +393,11 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     if (this.activeTab === 'html') {
       this.initializeHTMLNavigator();
     }
+    
+    // Inicializar TransformPanel si la pestaña Design está activa
+    if (this.activeTab === 'design' && this.selectedElement) {
+      this.initializeTransformPanel();
+    }
   }
 
   /**
@@ -416,6 +423,97 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
       // Escanear HTML inicial
       this.htmlNavigator.scanHTML();
     }
+  }
+
+  /**
+   * Inicializar TransformPanel
+   */
+  private initializeTransformPanel(): void {
+    const container = this.panelElement?.querySelector('#transform-panel-container') as HTMLElement;
+    if (container && this.selectedElement) {
+      // Destruir instancia anterior si existe
+      if (this.transformPanel) {
+        this.transformPanel.destroy();
+      }
+
+      // Obtener propiedades actuales del elemento
+      const computedStyle = window.getComputedStyle(this.selectedElement);
+      const transform = computedStyle.transform;
+      
+      // Parsear el transform para obtener valores individuales
+      let x = 0, y = 0, rotation = 0;
+      if (transform && transform !== 'none') {
+        const matrix = transform.match(/matrix.*\((.+)\)/);
+        if (matrix) {
+          const values = matrix[1].split(', ');
+          x = parseFloat(values[4]) || 0;
+          y = parseFloat(values[5]) || 0;
+          // Calcular rotación desde la matriz
+          const a = parseFloat(values[0]);
+          const b = parseFloat(values[1]);
+          rotation = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+        }
+      }
+
+      // Crear nueva instancia con propiedades iniciales
+      this.transformPanel = new TransformPanel({
+        container: container,
+        onChange: (props) => {
+          this.applyTransformToElement(props);
+        }
+      });
+
+      // Establecer propiedades iniciales desde el elemento
+      this.transformPanel.setProperties({
+        x,
+        y,
+        rotation,
+        width: this.selectedElement.offsetWidth,
+        height: this.selectedElement.offsetHeight,
+        borderRadius: parseFloat(computedStyle.borderRadius) || 0,
+        rotationUnit: 'deg',
+        sizeUnit: 'px'
+      });
+    }
+  }
+
+  /**
+   * Aplicar transformaciones al elemento seleccionado
+   */
+  private applyTransformToElement(props: TransformProperties): void {
+    if (!this.selectedElement) return;
+
+    const transforms: string[] = [];
+    
+    // Posición (translate)
+    transforms.push(`translate(${props.x}px, ${props.y}px)`);
+    
+    // Rotación
+    transforms.push(`rotate(${props.rotation}${props.rotationUnit})`);
+    
+    this.selectedElement.style.transform = transforms.join(' ');
+    
+    // Dimensiones
+    if (props.width !== 'auto') {
+      this.selectedElement.style.width = `${props.width}${props.sizeUnit}`;
+    } else {
+      this.selectedElement.style.width = 'auto';
+    }
+    
+    if (props.height !== 'auto') {
+      this.selectedElement.style.height = `${props.height}${props.sizeUnit}`;
+    } else {
+      this.selectedElement.style.height = 'auto';
+    }
+    
+    // Border radius
+    this.selectedElement.style.borderRadius = `${props.borderRadius}${props.sizeUnit}`;
+    
+    // TODO: Emitir evento de cambio cuando se agregue al tipo StyloEditorEvents
+    // this.emit('element:styleChanged', {
+    //   element: this.selectedElement,
+    //   properties: props
+    // });
   }
 
   /**
@@ -497,8 +595,10 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
           </div>
         </div>
         
-        <div style="color: #888; text-align: center; padding: 40px 0;">
-          Design controls will be implemented here
+        <!-- Transform Properties Panel -->
+        <div style="margin-bottom: 16px;">
+          <h3 style="margin: 0 0 12px 0; color: #4AEDFF;">Transform</h3>
+          <div id="transform-panel-container"></div>
         </div>
       </div>
     `;

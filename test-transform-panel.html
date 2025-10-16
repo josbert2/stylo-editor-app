@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transform Panel Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: #0a0a0a;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        
+        .transform-panel {
+            max-width: 400px;
+            margin: 20px auto;
+        }
+
+        /* Estilos adicionales para mejorar la UI */
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #22c55e;
+        }
+
+        .debug-panel {
+            background: #1a1a1a;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 400px;
+            rounded: 8px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .debug-panel h3 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .debug-panel pre {
+            background: #0a0a0a;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+            color: #22c55e;
+        }
+
+        .demo-element {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 20px auto;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 800px; margin: 0 auto;">
+        <h1 class="text-white text-2xl font-bold mb-4 text-center">Transform Panel - Demo</h1>
+        
+        <!-- Elemento de demostración -->
+        <div class="demo-element" id="demoElement"></div>
+        
+        <!-- Panel de transformación -->
+        <div id="transform-container"></div>
+        
+        <!-- Debug panel -->
+        <div class="debug-panel">
+            <h3>Propiedades actuales:</h3>
+            <pre id="debug-output">Esperando cambios...</pre>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import del componente (simulado para testing)
+        // En producción esto vendría del build
+
+        /**
+         * TransformPanel - Version simplificada para testing
+         */
+        class TransformPanel {
+            constructor(options = {}) {
+                this.container = options.container || document.createElement('div');
+                this.onChange = options.onChange;
+                
+                this.properties = {
+                    x: 0,
+                    y: 0,
+                    rotation: 0,
+                    width: 'auto',
+                    height: 'auto',
+                    borderRadius: 0,
+                    rotationUnit: 'deg',
+                    sizeUnit: 'px'
+                };
+
+                this.render();
+                this.attachEventListeners();
+            }
+
+            render() {
+                this.container.className = 'transform-panel p-3 space-y-3 rounded-lg bg-[#1a1a1a]';
+                
+                this.container.innerHTML = `
+                    <!-- Primera fila: X, Y, Rotación -->
+                    <div class="grid grid-cols-3 gap-2 text-xs">
+                        <div class="flex items-center space-y-1">
+                            <div class="flex gap-1 items-center">
+                                <span class="text-gray-400">X</span>
+                                <input 
+                                    type="text" 
+                                    data-property="x"
+                                    class="text-gray-300 bg-transparent border-none outline-none w-12 text-xs"
+                                    value="${this.properties.x}"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-y-1">
+                            <div class="flex gap-1 items-center">
+                                <span class="text-gray-400">Y</span>
+                                <input 
+                                    type="text" 
+                                    data-property="y"
+                                    class="text-gray-300 bg-transparent border-none outline-none w-12 text-xs"
+                                    value="${this.properties.y}"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-y-1">
+                            <label class="mr-2 text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5"></path>
+                                </svg>
+                            </label>
+                            <div class="flex relative rounded-lg border-2 border-[#2a2a2a]">
+                                <input 
+                                    type="text" 
+                                    data-property="rotation"
+                                    class="flex-1 px-2 py-1 w-full text-xs text-white bg-transparent outline-none"
+                                    placeholder="0"
+                                    value="${this.properties.rotation}"
+                                >
+                                <button 
+                                    type="button"
+                                    data-select="rotationUnit"
+                                    class="w-[60px] bg-none text-white px-2 py-1 rounded-r text-xs border-none focus:outline-none flex items-center justify-between"
+                                >
+                                    <span data-value="rotationUnit">${this.properties.rotationUnit}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down text-gray-400 shrink-0">
+                                        <path d="m6 9 6 6 6-6"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Segunda fila: Width, Height, Border Radius -->
+                    <div class="grid grid-cols-3 gap-2 text-xs">
+                        <div class="space-y-1">
+                            <label class="text-gray-400">W</label>
+                            <div class="flex relative rounded-lg border-2 border-[#2a2a2a]">
+                                <input 
+                                    type="text" 
+                                    data-property="width"
+                                    class="flex-1 px-2 py-1 w-full text-xs text-white bg-transparent border-none focus:border-green-500 focus:outline-none"
+                                    placeholder="auto"
+                                    value="${this.properties.width}"
+                                >
+                                <button 
+                                    type="button"
+                                    data-select="sizeUnit"
+                                    data-target="width"
+                                    class="w-[60px] bg-none text-white px-2 py-1 rounded-r text-xs border-none focus:outline-none flex items-center justify-between"
+                                >
+                                    <span data-value="sizeUnit-width">${this.properties.sizeUnit}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down text-gray-400 shrink-0">
+                                        <path d="m6 9 6 6 6-6"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-gray-400">H</label>
+                            <div class="flex relative rounded-lg border-2 border-[#2a2a2a]">
+                                <input 
+                                    type="text" 
+                                    data-property="height"
+                                    class="flex-1 px-2 py-1 w-full text-xs text-white bg-transparent border-none focus:border-green-500 focus:outline-none"
+                                    placeholder="auto"
+                                    value="${this.properties.height}"
+                                >
+                                <button 
+                                    type="button"
+                                    data-select="sizeUnit"
+                                    data-target="height"
+                                    class="w-[60px] bg-none text-white px-2 py-1 rounded-r text-xs border-none focus:outline-none flex items-center justify-between"
+                                >
+                                    <span data-value="sizeUnit-height">${this.properties.sizeUnit}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down text-gray-400 shrink-0">
+                                        <path d="m6 9 6 6 6-6"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-gray-400">R</label>
+                            <div class="flex relative rounded-lg border-2 border-[#2a2a2a]">
+                                <input 
+                                    type="text" 
+                                    data-property="borderRadius"
+                                    class="flex-1 px-2 py-1 w-full text-xs text-white bg-transparent border-none focus:border-green-500 focus:outline-none"
+                                    placeholder="0"
+                                    value="${this.properties.borderRadius}"
+                                >
+                                <button 
+                                    type="button"
+                                    data-select="sizeUnit"
+                                    data-target="borderRadius"
+                                    class="w-[60px] bg-none text-white px-2 py-1 rounded-r text-xs border-none focus:outline-none flex items-center justify-between"
+                                >
+                                    <span data-value="sizeUnit-borderRadius">${this.properties.sizeUnit}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down text-gray-400 shrink-0">
+                                        <path d="m6 9 6 6 6-6"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown para selectores -->
+                    <div data-dropdown="units" class="hidden absolute bg-[#2a2a2a] rounded-md shadow-lg mt-1 py-1 z-50"></div>
+                `;
+            }
+
+            attachEventListeners() {
+                const inputs = this.container.querySelectorAll('input[data-property]');
+                inputs.forEach(input => {
+                    input.addEventListener('input', (e) => this.handleInputChange(e));
+                    input.addEventListener('blur', (e) => this.handleInputBlur(e));
+                });
+
+                const selectButtons = this.container.querySelectorAll('button[data-select]');
+                selectButtons.forEach(button => {
+                    button.addEventListener('click', (e) => this.handleSelectClick(e));
+                });
+            }
+
+            handleInputChange(event) {
+                const input = event.target;
+                const property = input.dataset.property;
+                
+                if (!property) return;
+
+                let value = input.value;
+                
+                if (value !== 'auto' && value !== '') {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                        value = numValue;
+                    }
+                }
+
+                this.properties[property] = value;
+            }
+
+            handleInputBlur(event) {
+                if (this.onChange) {
+                    this.onChange({ ...this.properties });
+                }
+            }
+
+            handleSelectClick(event) {
+                const button = event.currentTarget;
+                const selectType = button.dataset.select;
+                
+                if (selectType === 'rotationUnit') {
+                    this.showUnitDropdown(button, ['deg', 'rad', 'turn'], (unit) => {
+                        this.properties.rotationUnit = unit;
+                        this.updateSelectValue(button, unit);
+                        if (this.onChange) this.onChange({ ...this.properties });
+                    });
+                } else if (selectType === 'sizeUnit') {
+                    this.showUnitDropdown(button, ['px', '%', 'rem', 'em', 'vw', 'vh'], (unit) => {
+                        this.properties.sizeUnit = unit;
+                        this.updateSelectValue(button, unit);
+                        if (this.onChange) this.onChange({ ...this.properties });
+                    });
+                }
+            }
+
+            showUnitDropdown(button, options, onSelect) {
+                const dropdown = this.container.querySelector('[data-dropdown="units"]');
+                if (!dropdown) return;
+
+                dropdown.innerHTML = options.map(opt => `
+                    <div class="px-3 py-2 hover:bg-[#3a3a3a] cursor-pointer text-xs text-white" data-option="${opt}">
+                        ${opt}
+                    </div>
+                `).join('');
+
+                const rect = button.getBoundingClientRect();
+                const containerRect = this.container.getBoundingClientRect();
+                dropdown.style.left = `${rect.left - containerRect.left}px`;
+                dropdown.style.top = `${rect.bottom - containerRect.top}px`;
+                dropdown.classList.remove('hidden');
+
+                const optionElements = dropdown.querySelectorAll('[data-option]');
+                optionElements.forEach(opt => {
+                    opt.addEventListener('click', () => {
+                        const value = opt.dataset.option;
+                        if (value) {
+                            onSelect(value);
+                            dropdown.classList.add('hidden');
+                        }
+                    });
+                });
+
+                const closeDropdown = (e) => {
+                    if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                };
+                
+                setTimeout(() => {
+                    document.addEventListener('click', closeDropdown);
+                }, 0);
+            }
+
+            updateSelectValue(button, value) {
+                const valueSpan = button.querySelector('[data-value]');
+                if (valueSpan) {
+                    valueSpan.textContent = value;
+                }
+            }
+
+            getElement() {
+                return this.container;
+            }
+        }
+
+        // Inicializar el panel
+        const container = document.getElementById('transform-container');
+        const debugOutput = document.getElementById('debug-output');
+        const demoElement = document.getElementById('demoElement');
+        
+        const panel = new TransformPanel({
+            container: container,
+            onChange: (props) => {
+                // Actualizar debug output
+                debugOutput.textContent = JSON.stringify(props, null, 2);
+                
+                // Aplicar transformaciones al elemento de demo
+                applyTransform(demoElement, props);
+            }
+        });
+
+        // Función para aplicar transformaciones
+        function applyTransform(element, props) {
+            const transforms = [];
+            
+            // Posición
+            transforms.push(`translate(${props.x}px, ${props.y}px)`);
+            
+            // Rotación
+            transforms.push(`rotate(${props.rotation}${props.rotationUnit})`);
+            
+            element.style.transform = transforms.join(' ');
+            
+            // Dimensiones
+            if (props.width !== 'auto') {
+                element.style.width = `${props.width}${props.sizeUnit}`;
+            }
+            if (props.height !== 'auto') {
+                element.style.height = `${props.height}${props.sizeUnit}`;
+            }
+            
+            // Border radius
+            element.style.borderRadius = `${props.borderRadius}${props.sizeUnit}`;
+        }
+
+        console.log('Transform Panel inicializado correctamente');
+    </script>
+</body>
+</html>
