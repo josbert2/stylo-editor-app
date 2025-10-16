@@ -6,6 +6,7 @@ import { ColorDropper } from './ColorDropper';
 import { Ruler } from './Ruler';
 import { AssetManager } from './AssetManager';
 import { HTMLNavigatorWindow } from './HTMLNavigatorWindow';
+import { HTMLNavigator } from './HTMLNavigator';
 import { JSConsole } from './JSConsole';
 import { TailwindInspector } from './TailwindInspector';
 
@@ -26,10 +27,6 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   private jsConsole: JSConsole | null = null;
   private tailwindInspector: TailwindInspector | null = null;
   private tailwindConfigViewer: any | null = null;
-  private htmlNavigator: HTMLNavigator | null = null;
-  private assetManager: AssetManager | null = null;
-  private ruler: Ruler | null = null;
-  private isPaused: boolean = false;
 
   constructor(container: HTMLElement) {
     super();
@@ -657,6 +654,112 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
         consoleBtn.classList.remove('active');
         consoleBtn.style.background = '';
         consoleBtn.style.borderColor = '';
+      }
+    }
+  }
+
+  private toggleHTMLNavigator(): void {
+    if (!this.htmlNavigatorWindow) {
+      this.htmlNavigatorWindow = new HTMLNavigatorWindow(this.container, {
+        onClose: () => {
+          this.updateHTMLNavigatorButtonState(false);
+        }
+      });
+    }
+    
+    if (this.htmlNavigatorWindow.isShown()) {
+      this.htmlNavigatorWindow.hide();
+      this.updateHTMLNavigatorButtonState(false);
+    } else {
+      this.htmlNavigatorWindow.show();
+      this.updateHTMLNavigatorButtonState(true);
+    }
+  }
+
+  private updateHTMLNavigatorButtonState(active: boolean): void {
+    const htmlNavBtn = this.dockElement?.querySelector('[data-action="html-navigator"]') as HTMLElement;
+    if (htmlNavBtn) {
+      if (active) {
+        htmlNavBtn.classList.add('active');
+        htmlNavBtn.style.background = 'rgba(59, 130, 246, 0.2)';
+        htmlNavBtn.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+      } else {
+        htmlNavBtn.classList.remove('active');
+        htmlNavBtn.style.background = '';
+        htmlNavBtn.style.borderColor = '';
+      }
+    }
+  }
+
+  private toggleColorDropper(): void {
+    if (!this.colorDropper) {
+      this.colorDropper = new ColorDropper(this.container, {
+        onColorPicked: (color: string) => {
+          this.emit('dock:color-picked', color);
+        },
+        onActivated: () => {
+          this.updateColorDropperButtonState(true);
+        },
+        onDeactivated: () => {
+          this.updateColorDropperButtonState(false);
+        },
+        enableZoomView: true
+      });
+    }
+    
+    if (this.colorDropper.isActivated()) {
+      this.colorDropper.deactivate();
+      this.updateColorDropperButtonState(false);
+    } else {
+      this.colorDropper.activate();
+      this.updateColorDropperButtonState(true);
+    }
+  }
+
+  private updateColorDropperButtonState(active: boolean): void {
+    const dropperBtn = this.dockElement?.querySelector('[data-action="color-dropper"], [data-action="eyedropper"]') as HTMLElement;
+    if (dropperBtn) {
+      if (active) {
+        dropperBtn.classList.add('active');
+        dropperBtn.style.background = 'rgba(236, 72, 153, 0.2)';
+        dropperBtn.style.borderColor = 'rgba(236, 72, 153, 0.4)';
+      } else {
+        dropperBtn.classList.remove('active');
+        dropperBtn.style.background = '';
+        dropperBtn.style.borderColor = '';
+      }
+    }
+  }
+
+  private toggleTailwindInspector(): void {
+    if (!this.tailwindInspector) {
+      this.tailwindInspector = new TailwindInspector(this.container, {
+        onClose: () => {
+          this.updateTailwindInspectorButtonState(false);
+        }
+      });
+      this.tailwindInspector.show();
+      this.updateTailwindInspectorButtonState(true);
+    } else {
+      // Toggle visibility - TailwindInspector doesn't have isShown(), so we toggle by showing/hiding
+      this.tailwindInspector.hide();
+      this.updateTailwindInspectorButtonState(false);
+      // Destroy and recreate on next toggle
+      this.tailwindInspector = null;
+    }
+  }
+
+  private updateTailwindInspectorButtonState(active: boolean): void {
+    const tailwindBtn = this.dockElement?.querySelector('[data-action="tailwind-inspector"]') as HTMLElement;
+    if (tailwindBtn) {
+      if (active) {
+        tailwindBtn.classList.add('active');
+        tailwindBtn.style.background = 'rgba(6, 182, 212, 0.2)';
+        tailwindBtn.style.borderColor = 'rgba(6, 182, 212, 0.4)';
+      } else {
+        tailwindBtn.classList.remove('active');
+        tailwindBtn.style.background = '';
+        tailwindBtn.style.borderColor = '';
       }
     }
   }

@@ -13,6 +13,9 @@ import { ScrollArea } from './ScrollArea';
 import { Dock } from './Dock';
 import { HTMLNavigator } from './HTMLNavigator';
 import { TransformPanel, type TransformProperties } from './TransformPanel';
+import { tailwindClasses } from '../utils/tailwindClasses';
+import { injectTailwindClass } from '../utils/tailwindJIT';
+import { tailwindColors } from '../utils/tailwindColorsData';
 
 export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private container: HTMLElement;
@@ -30,6 +33,21 @@ export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private dock: Dock | null = null;
   private htmlNavigator: HTMLNavigator | null = null;
   private transformPanel: TransformPanel | null = null;
+  
+  // Tailwind: Rastrear clases deshabilitadas (exist en la lista pero no aplicadas al elemento)
+  private disabledTailwindClasses: Set<string> = new Set();
+  
+  // Tailwind: Índice de sugerencia seleccionada para navegación con teclado
+  private selectedSuggestionIndex: number = -1;
+  
+  // Tailwind: Bandera para evitar duplicar event listeners
+  private tailwindEventsBound: boolean = false;
+  
+  // Tailwind: Referencias a funciones de eventos para poder removerlas
+  private tailwindInputHandler: ((e: Event) => void) | null = null;
+  private tailwindKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
+  private tailwindPanelClickHandler: ((e: Event) => void) | null = null;
+  private tailwindPanelMouseoverHandler: ((e: Event) => void) | null = null;
   
   // Propiedades para mejorar el drag
   private dragThrottleId: number | null = null;
@@ -188,6 +206,14 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     } else {
       this.renderFullView();
     }
+
+    // Re-vincular eventos de Tailwind si estamos en esa tab
+    if (this.activeTab === 'tailwind' && !this.isMinimized) {
+      // Usar setTimeout para asegurar que el DOM esté listo
+      setTimeout(() => {
+        this.bindTailwindSearchEvents();
+      }, 50);
+    }
   }
 
   /**
@@ -327,6 +353,14 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
         </button>
         <button class="tab-btn button-btn-fancy fancy-wfull ${this.activeTab === 'html' ? 'active' : ''}" data-tab="html" style="--coord-x: 0; --coord-y: 0;">
           <div class="inner">HTML</div>
+        </button>
+        <button class="tab-btn button-btn-fancy fancy-wfull ${this.activeTab === 'tailwind' ? 'active' : ''}" data-tab="tailwind" style="--coord-x: 0; --coord-y: 0;">
+          <div class="inner">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 54 33" fill="none" style="margin-right: 4px;">
+              <path fill="#38bdf8" fill-rule="evenodd" d="M27 0c-7.2 0-11.7 3.6-13.5 10.8 2.7-3.6 5.85-4.95 9.45-4.05 2.054.513 3.522 2.004 5.147 3.653C30.744 13.09 33.808 16.2 40.5 16.2c7.2 0 11.7-3.6 13.5-10.8-2.7 3.6-5.85 4.95-9.45 4.05-2.054-.513-3.522-2.004-5.147-3.653C36.756 3.11 33.692 0 27 0zM13.5 16.2C6.3 16.2 1.8 19.8 0 27c2.7-3.6 5.85-4.95 9.45-4.05 2.054.514 3.522 2.004 5.147 3.653C17.244 29.29 20.308 32.4 27 32.4c7.2 0 11.7-3.6 13.5-10.8-2.7 3.6-5.85 4.95-9.45 4.05-2.054-.513-3.522-2.004-5.147-3.653C23.256 19.31 20.192 16.2 13.5 16.2z" clip-rule="evenodd"/>
+            </svg>
+            Tailwind
+          </div>
         </button>
       </div>
       </div>
@@ -526,6 +560,8 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
       return this.renderCodeTab();
     } else if (this.activeTab === 'html') {
       return this.renderHTMLTab();
+    } else if (this.activeTab === 'tailwind') {
+      return this.renderTailwindTab();
     }
     return '';
   }
@@ -656,6 +692,649 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
   }
 
   /**
+   * Renderizar pestaña Tailwind
+   */
+  private renderTailwindTab(): string {
+    if (!this.selectedElement) {
+      return `
+        <div style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 300px;
+          text-align: center;
+          color: #888;
+        ">
+          <svg width="64" height="64" viewBox="0 0 54 33" fill="none" style="opacity: 0.3; margin-bottom: 16px;">
+            <path fill="#38bdf8" fill-rule="evenodd" d="M27 0c-7.2 0-11.7 3.6-13.5 10.8 2.7-3.6 5.85-4.95 9.45-4.05 2.054.513 3.522 2.004 5.147 3.653C30.744 13.09 33.808 16.2 40.5 16.2c7.2 0 11.7-3.6 13.5-10.8-2.7 3.6-5.85 4.95-9.45 4.05-2.054-.513-3.522-2.004-5.147-3.653C36.756 3.11 33.692 0 27 0zM13.5 16.2C6.3 16.2 1.8 19.8 0 27c2.7-3.6 5.85-4.95 9.45-4.05 2.054.514 3.522 2.004 5.147 3.653C17.244 29.29 20.308 32.4 27 32.4c7.2 0 11.7-3.6 13.5-10.8-2.7 3.6-5.85 4.95-9.45 4.05-2.054-.513-3.522-2.004-5.147-3.653C23.256 19.31 20.192 16.2 13.5 16.2z" clip-rule="evenodd"/>
+          </svg>
+          <h3 style="margin: 0 0 8px 0; color: #fff; font-size: 16px;">Select an element</h3>
+          <p style="margin: 0; font-size: 14px;">Use the inspector to select an element and apply Tailwind classes</p>
+        </div>
+      `;
+    }
+
+    // Combinar clases activas y deshabilitadas
+    const activeClasses = Array.from(this.selectedElement.classList);
+    const allClasses = [...new Set([...activeClasses, ...Array.from(this.disabledTailwindClasses)])];
+    
+    return `
+      <div class="tailwind-tab-content" style="
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      ">
+        <!-- Search Input -->
+        <div style="position: relative;">
+          <input 
+            type="text" 
+            class="tailwind-search-input" 
+            placeholder="Search Tailwind classes..."
+            style="
+              width: 100%;
+              padding: 10px 12px;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 8px;
+              color: white;
+              font-size: 14px;
+              outline: none;
+              transition: all 0.2s;
+            "
+          />
+          <div class="tailwind-suggestions" style="
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 4px;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+          "></div>
+        </div>
+
+        <!-- Current Classes -->
+        <div style="flex: 1; overflow-y: auto;">
+          <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+          ">
+            <h4 style="margin: 0; font-size: 13px; color: rgba(255, 255, 255, 0.7); font-weight: 500;">Applied Classes</h4>
+            <span style="font-size: 12px; color: rgba(255, 255, 255, 0.4);">${activeClasses.length} active / ${allClasses.length} total</span>
+          </div>
+          
+          <div class="tailwind-classes-list" style="
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+          ">
+            ${allClasses.length > 0 ? allClasses.map(cls => {
+              const isActive = this.selectedElement?.classList.contains(cls) || false;
+              return `
+              <div class="tailwind-class-item" data-class="${cls}" data-active="${isActive}" style="
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 12px;
+                background: ${isActive ? 'rgba(56, 189, 248, 0.1)' : 'rgba(128, 128, 128, 0.05)'};
+                border: 1px solid ${isActive ? 'rgba(56, 189, 248, 0.3)' : 'rgba(128, 128, 128, 0.2)'};
+                border-radius: 8px;
+                font-size: 12px;
+                color: ${isActive ? '#38bdf8' : 'rgba(255, 255, 255, 0.4)'};
+                transition: all 0.2s;
+                opacity: ${isActive ? '1' : '0.6'};
+              ">
+                <!-- Custom Checkbox -->
+                <label class="toggle-class-checkbox" style="
+                  position: relative;
+                  display: inline-flex;
+                  align-items: center;
+                  cursor: pointer;
+                  user-select: none;
+                ">
+                  <input type="checkbox" ${isActive ? 'checked' : ''} style="display: none;" />
+                  <span class="checkbox-custom" style="
+                    position: relative;
+                    width: 16px;
+                    height: 16px;
+                    border: 2px solid ${isActive ? '#38bdf8' : 'rgba(255, 255, 255, 0.3)'};
+                    border-radius: 4px;
+                    background: ${isActive ? '#38bdf8' : 'transparent'};
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  ">
+                    ${isActive ? `
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6L5 9L10 3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    ` : ''}
+                  </span>
+                </label>
+                
+                <span class="class-name" style="flex: 1; font-family: 'Courier New', monospace;">${cls}</span>
+                
+                <svg class="remove-class-btn" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; cursor: pointer; transition: opacity 0.2s;">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </div>
+            `}).join('') : `
+              <div style="
+                width: 100%;
+                padding: 20px;
+                text-align: center;
+                color: rgba(255, 255, 255, 0.4);
+                font-size: 13px;
+              ">
+                No classes applied yet
+              </div>
+            `}
+          </div>
+        </div>
+
+        <!-- Quick Categories -->
+        <div style="
+          padding-top: 12px;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+        ">
+          <h4 style="margin: 0 0 8px 0; font-size: 12px; color: rgba(255, 255, 255, 0.5); font-weight: 500; text-transform: uppercase;">Quick Access</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <button class="tw-category-btn" data-category="flex" style="
+              padding: 6px 12px;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 6px;
+              color: rgba(255, 255, 255, 0.7);
+              font-size: 11px;
+              cursor: pointer;
+              transition: all 0.2s;
+            ">Flexbox</button>
+            <button class="tw-category-btn" data-category="grid" style="
+              padding: 6px 12px;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 6px;
+              color: rgba(255, 255, 255, 0.7);
+              font-size: 11px;
+              cursor: pointer;
+              transition: all 0.2s;
+            ">Grid</button>
+            <button class="tw-category-btn" data-category="text" style="
+              padding: 6px 12px;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 6px;
+              color: rgba(255, 255, 255, 0.7);
+              font-size: 11px;
+              cursor: pointer;
+              transition: all 0.2s;
+            ">Text</button>
+            <button class="tw-category-btn" data-category="bg" style="
+              padding: 6px 12px;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 6px;
+              color: rgba(255, 255, 255, 0.7);
+              font-size: 11px;
+              cursor: pointer;
+              transition: all 0.2s;
+            ">Background</button>
+            <button class="tw-category-btn" data-category="p-" style="
+              padding: 6px 12px;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 6px;
+              color: rgba(255, 255, 255, 0.7);
+              font-size: 11px;
+              cursor: pointer;
+              transition: all 0.2s;
+            ">Padding</button>
+            <button class="tw-category-btn" data-category="m-" style="
+              padding: 6px 12px;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 6px;
+              color: rgba(255, 255, 255, 0.7);
+              font-size: 11px;
+              cursor: pointer;
+              transition: all 0.2s;
+            ">Margin</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Filtrar clases de Tailwind según búsqueda
+   */
+  private filterTailwindClasses(query: string): string[] {
+    if (!query.trim()) return [];
+    
+    const lowerQuery = query.toLowerCase();
+    return tailwindClasses
+      .filter(cls => cls.toLowerCase().includes(lowerQuery))
+      .slice(0, 15); // Limitar a 15 resultados
+  }
+
+  /**
+   * Obtener el color de una clase de Tailwind para preview
+   */
+  private getColorPreview(className: string): string | null {
+    // Valores arbitrarios: bg-[#ff0000], text-[rgb(255,0,0)]
+    const arbitraryMatch = className.match(/\[([^\]]+)\]/);
+    if (arbitraryMatch) {
+      return arbitraryMatch[1];
+    }
+
+    // Lista completa de colores de Tailwind
+    const allColors = 'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
+    
+    // Regex mejorado que captura:
+    // - Utilidades simples: bg-red-500, text-blue-400
+    // - Con dirección: border-t-red-500, border-x-blue-400
+    // - Con prefijos: ring-offset-red-500, inset-ring-blue-400
+    // Patrón: (prefijo-)?(utilidad)(dirección)?-color-shade
+    const colorMatch = className.match(
+      new RegExp(`^(?:inset-)?(?:bg|text|border|ring|outline|shadow|decoration|accent|caret|fill|stroke|divide|placeholder|from|via|to)(?:-(?:t|r|b|l|x|y|s|e|offset))?-(${allColors})-(\\d+)$`)
+    );
+    
+    if (colorMatch) {
+      const colorName = colorMatch[1];
+      const shade = colorMatch[2];
+      return tailwindColors[colorName]?.[shade] || null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Aplicar clase de Tailwind al elemento seleccionado
+   */
+  private applyTailwindClass(className: string): void {
+    if (!this.selectedElement || !className.trim()) return;
+
+    const trimmedClass = className.trim();
+    
+    // JIT: Inyectar CSS dinámicamente si la clase no existe
+    const injected = injectTailwindClass(trimmedClass);
+    
+    if (!this.selectedElement.classList.contains(trimmedClass)) {
+      this.selectedElement.classList.add(trimmedClass);
+      this.renderContent();
+      if (this.styleValues) {
+        this.emit('styles:updated', this.styleValues);
+      }
+      
+      // Mostrar notificación si se generó la clase dinámicamente
+      if (injected && !tailwindClasses.includes(trimmedClass)) {
+        this.showJITNotification(trimmedClass);
+      }
+    }
+
+    // Limpiar input de búsqueda
+    const searchInput = this.panelElement?.querySelector('.tailwind-search-input') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.value = '';
+      this.hideTailwindSuggestions();
+    }
+  }
+
+  /**
+   * Toggle (habilitar/deshabilitar) clase de Tailwind
+   */
+  private toggleTailwindClass(className: string): void {
+    if (!this.selectedElement) return;
+
+    if (this.selectedElement.classList.contains(className)) {
+      // Deshabilitar: remover del elemento pero mantener en la lista
+      this.selectedElement.classList.remove(className);
+      this.disabledTailwindClasses.add(className);
+    } else {
+      // Habilitar: agregar al elemento y remover de deshabilitadas
+      this.selectedElement.classList.add(className);
+      this.disabledTailwindClasses.delete(className);
+    }
+
+    this.renderContent();
+    if (this.styleValues) {
+      this.emit('styles:updated', this.styleValues);
+    }
+  }
+
+  /**
+   * Remover clase de Tailwind del elemento seleccionado completamente
+   */
+  private removeTailwindClass(className: string): void {
+    if (!this.selectedElement) return;
+
+    this.selectedElement.classList.remove(className);
+    this.disabledTailwindClasses.delete(className); // También remover de deshabilitadas
+    this.renderContent();
+    if (this.styleValues) {
+      this.emit('styles:updated', this.styleValues);
+    }
+  }
+
+  /**
+   * Manejar categoría rápida de Tailwind
+   */
+  private handleTailwindCategory(category: string): void {
+    const searchInput = this.panelElement?.querySelector('.tailwind-search-input') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.value = category;
+      searchInput.focus();
+      this.showTailwindSuggestions(category);
+    }
+  }
+
+  /**
+   * Mostrar sugerencias de Tailwind
+   */
+  private showTailwindSuggestions(query: string): void {
+    const suggestionsContainer = this.panelElement?.querySelector('.tailwind-suggestions') as HTMLElement;
+    if (!suggestionsContainer) return;
+
+    const suggestions = this.filterTailwindClasses(query);
+
+    if (suggestions.length === 0) {
+      this.hideTailwindSuggestions();
+      return;
+    }
+
+    // Resetear índice si está fuera de rango
+    if (this.selectedSuggestionIndex >= suggestions.length) {
+      this.selectedSuggestionIndex = -1;
+    }
+
+    suggestionsContainer.innerHTML = suggestions
+      .map((cls, index) => {
+        const isSelected = index === this.selectedSuggestionIndex;
+        const colorPreview = this.getColorPreview(cls);
+        
+        return `
+        <div class="tailwind-suggestion-item" data-class="${cls}" data-index="${index}" style="
+          padding: 10px 12px;
+          cursor: pointer;
+          font-size: 13px;
+          color: rgba(255, 255, 255, 0.9);
+          background: ${isSelected ? 'rgba(56, 189, 248, 0.2)' : 'transparent'};
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          transition: background 0.15s;
+          font-family: 'Courier New', monospace;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          min-height: 36px;
+        ">
+          ${colorPreview ? `
+            <span class="color-preview" style="
+              display: inline-block;
+              width: 18px;
+              height: 18px;
+              min-width: 18px;
+              min-height: 18px;
+              border-radius: 3px;
+              background: ${colorPreview};
+              border: 1.5px solid rgba(255, 255, 255, 0.3);
+              flex-shrink: 0;
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+            "></span>
+          ` : ''}
+          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cls}</span>
+        </div>
+      `})
+      .join('');
+
+    suggestionsContainer.style.display = 'block';
+
+    // Scroll automático a la sugerencia seleccionada
+    if (this.selectedSuggestionIndex >= 0) {
+      const selectedItem = suggestionsContainer.querySelector(`[data-index="${this.selectedSuggestionIndex}"]`) as HTMLElement;
+      if (selectedItem) {
+        selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+  }
+
+  /**
+   * Actualizar el resaltado de la sugerencia seleccionada
+   */
+  private updateSuggestionHighlight(): void {
+    const suggestionsContainer = this.panelElement?.querySelector('.tailwind-suggestions') as HTMLElement;
+    if (!suggestionsContainer) return;
+
+    const items = suggestionsContainer.querySelectorAll('.tailwind-suggestion-item');
+    items.forEach((item, index) => {
+      const htmlItem = item as HTMLElement;
+      if (index === this.selectedSuggestionIndex) {
+        htmlItem.style.background = 'rgba(56, 189, 248, 0.25)';
+        htmlItem.style.borderLeft = '3px solid #38bdf8';
+      } else {
+        htmlItem.style.background = 'transparent';
+        htmlItem.style.borderLeft = '3px solid transparent';
+      }
+    });
+
+    // Scroll automático a la sugerencia seleccionada
+    if (this.selectedSuggestionIndex >= 0 && this.selectedSuggestionIndex < items.length) {
+      const selectedItem = items[this.selectedSuggestionIndex] as HTMLElement;
+      selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  /**
+   * Ocultar sugerencias de Tailwind
+   */
+  private hideTailwindSuggestions(): void {
+    const suggestionsContainer = this.panelElement?.querySelector('.tailwind-suggestions') as HTMLElement;
+    if (suggestionsContainer) {
+      suggestionsContainer.style.display = 'none';
+      suggestionsContainer.innerHTML = '';
+    }
+    this.selectedSuggestionIndex = -1;
+  }
+
+  /**
+   * Mostrar notificación JIT cuando se genera una clase dinámicamente
+   */
+  private showJITNotification(className: string): void {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      font-size: 13px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      z-index: 10002;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    `;
+    
+    notification.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <span><strong>JIT:</strong> Generated <code style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; font-family: monospace;">${className}</code></span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animar entrada
+    setTimeout(() => {
+      notification.style.opacity = '1';
+      notification.style.transform = 'translateY(0)';
+    }, 10);
+    
+    // Auto-remover después de 3 segundos
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateY(10px)';
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    }, 3000);
+  }
+
+  /**
+   * Vincular eventos de input de búsqueda de Tailwind
+   */
+  private bindTailwindSearchEvents(): void {
+    const searchInput = this.panelElement?.querySelector('.tailwind-search-input') as HTMLInputElement;
+    if (!searchInput) return;
+
+    // Remover listeners antiguos si existen
+    if (this.tailwindInputHandler) {
+      searchInput.removeEventListener('input', this.tailwindInputHandler);
+    }
+    if (this.tailwindKeydownHandler) {
+      searchInput.removeEventListener('keydown', this.tailwindKeydownHandler);
+    }
+    if (this.tailwindPanelClickHandler && this.panelElement) {
+      this.panelElement.removeEventListener('click', this.tailwindPanelClickHandler);
+    }
+    if (this.tailwindPanelMouseoverHandler && this.panelElement) {
+      this.panelElement.removeEventListener('mouseover', this.tailwindPanelMouseoverHandler);
+    }
+
+    // Crear nuevo handler para input
+    this.tailwindInputHandler = (e) => {
+      const query = (e.target as HTMLInputElement).value;
+      this.selectedSuggestionIndex = -1;
+      if (query.trim()) {
+        this.showTailwindSuggestions(query);
+      } else {
+        this.hideTailwindSuggestions();
+      }
+    };
+    searchInput.addEventListener('input', this.tailwindInputHandler);
+
+    // Crear nuevo handler para keydown
+    this.tailwindKeydownHandler = (e) => {
+      const suggestionsContainer = this.panelElement?.querySelector('.tailwind-suggestions') as HTMLElement;
+      const isVisible = suggestionsContainer && suggestionsContainer.style.display !== 'none';
+      
+      if (!isVisible) {
+        // Si no hay sugerencias visibles, solo manejar Enter para aplicar directamente
+        if (e.key === 'Enter' && searchInput.value.trim()) {
+          e.preventDefault();
+          this.applyTailwindClass(searchInput.value);
+        }
+        return;
+      }
+
+      const suggestions = suggestionsContainer?.querySelectorAll('.tailwind-suggestion-item') || [];
+      const suggestionsCount = suggestions.length;
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          this.selectedSuggestionIndex = (this.selectedSuggestionIndex + 1) % suggestionsCount;
+          this.updateSuggestionHighlight();
+          break;
+
+        case 'ArrowUp':
+          e.preventDefault();
+          this.selectedSuggestionIndex = this.selectedSuggestionIndex <= 0 
+            ? suggestionsCount - 1 
+            : this.selectedSuggestionIndex - 1;
+          this.updateSuggestionHighlight();
+          break;
+
+        case 'Enter':
+          e.preventDefault();
+          if (this.selectedSuggestionIndex >= 0 && this.selectedSuggestionIndex < suggestionsCount) {
+            // Aplicar la sugerencia seleccionada
+            const selectedItem = suggestions[this.selectedSuggestionIndex] as HTMLElement;
+            const className = selectedItem.getAttribute('data-class');
+            if (className) {
+              this.applyTailwindClass(className);
+            }
+          } else if (searchInput.value.trim()) {
+            // Si no hay selección, aplicar el texto directamente
+            this.applyTailwindClass(searchInput.value);
+          }
+          break;
+
+        case 'Escape':
+          e.preventDefault();
+          this.hideTailwindSuggestions();
+          searchInput.blur();
+          break;
+
+        case 'Tab':
+          // Permitir Tab para navegar, pero cerrar sugerencias
+          this.hideTailwindSuggestions();
+          break;
+      }
+    };
+    searchInput.addEventListener('keydown', this.tailwindKeydownHandler);
+
+    // Crear handler para clicks en sugerencias
+    this.tailwindPanelClickHandler = (e) => {
+      const target = e.target as HTMLElement;
+      const suggestionItem = target.closest('.tailwind-suggestion-item') as HTMLElement;
+      
+      if (suggestionItem) {
+        const className = suggestionItem.getAttribute('data-class');
+        if (className) {
+          this.applyTailwindClass(className);
+        }
+      }
+    };
+    if (this.panelElement) {
+      this.panelElement.addEventListener('click', this.tailwindPanelClickHandler);
+    }
+
+    // Crear handler para hover en sugerencias
+    this.tailwindPanelMouseoverHandler = (e) => {
+      const target = e.target as HTMLElement;
+      const suggestionItem = target.closest('.tailwind-suggestion-item') as HTMLElement;
+      
+      if (suggestionItem) {
+        const index = parseInt(suggestionItem.getAttribute('data-index') || '-1');
+        if (index >= 0) {
+          this.selectedSuggestionIndex = index;
+          this.updateSuggestionHighlight();
+        }
+      }
+    };
+    if (this.panelElement) {
+      this.panelElement.addEventListener('mouseover', this.tailwindPanelMouseoverHandler);
+    }
+
+    // Cerrar sugerencias al hacer click fuera
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.tailwind-search-input') && !target.closest('.tailwind-suggestions')) {
+        this.hideTailwindSuggestions();
+      }
+    });
+  }
+
+  /**
    * Vincular eventos
    */
   private bindEvents(): void {
@@ -678,6 +1357,44 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
           // Emitir evento de toggle del inspector
           this.emit('inspector:toggle', true);
         }
+      
+      // Tailwind tab: Toggle clase (checkbox)
+      if (target.closest('.toggle-class-checkbox')) {
+        e.preventDefault(); // Prevenir el comportamiento por defecto
+        const classItem = target.closest('.tailwind-class-item') as HTMLElement;
+        const className = classItem?.getAttribute('data-class');
+        if (className && this.selectedElement) {
+          this.toggleTailwindClass(className);
+        }
+      }
+
+      // Tailwind tab: Remover clase
+      if (target.closest('.remove-class-btn')) {
+        e.stopPropagation(); // Prevenir que active el toggle
+        const classItem = target.closest('.tailwind-class-item') as HTMLElement;
+        const className = classItem?.getAttribute('data-class');
+        if (className && this.selectedElement) {
+          this.removeTailwindClass(className);
+        }
+      }
+
+      // Tailwind tab: Categoría rápida
+      if (target.closest('.tw-category-btn')) {
+        const categoryBtn = target.closest('.tw-category-btn') as HTMLElement;
+        const category = categoryBtn?.getAttribute('data-category');
+        if (category) {
+          this.handleTailwindCategory(category);
+        }
+      }
+
+      // Tailwind tab: Click en sugerencia
+      if (target.closest('.tailwind-suggestion-item')) {
+        const suggestionItem = target.closest('.tailwind-suggestion-item') as HTMLElement;
+        const className = suggestionItem?.getAttribute('data-class');
+        if (className && this.selectedElement) {
+          this.applyTailwindClass(className);
+        }
+      }
     });
 
     // Responder al instante al expand/minimize con mousedown (sin esperar click)
@@ -1104,6 +1821,13 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     if (tab === 'html' && !this.isMinimized) {
       setTimeout(() => {
         this.initializeHTMLNavigator();
+      }, 100);
+    }
+    
+    // Inicializar eventos de búsqueda de Tailwind cuando se cambie a la pestaña Tailwind
+    if (tab === 'tailwind' && !this.isMinimized) {
+      setTimeout(() => {
+        this.bindTailwindSearchEvents();
       }, 100);
     }
     
