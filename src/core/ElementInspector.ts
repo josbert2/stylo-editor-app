@@ -8,9 +8,22 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
   private hoveredElement: HTMLElement | null = null;
   private overlay: HTMLElement | null = null;
   private excludeSelectors: string[] = [];
+  
+  // Guardar referencias a los handlers para poder removerlos correctamente
+  private boundHandleClick: (event: MouseEvent) => void;
+  private boundHandleMouseOver: (event: MouseEvent) => void;
+  private boundHandleMouseOut: (event: MouseEvent) => void;
+  private boundHandleKeyDown: (event: KeyboardEvent) => void;
 
   constructor() {
     super();
+    
+    // Crear referencias bound una sola vez
+    this.boundHandleClick = this.handleClick.bind(this);
+    this.boundHandleMouseOver = this.handleMouseOver.bind(this);
+    this.boundHandleMouseOut = this.handleMouseOut.bind(this);
+    this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+    
     this.createOverlay();
     this.bindEvents();
   }
@@ -39,20 +52,22 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
    * Vincular eventos del DOM
    */
   private bindEvents(): void {
-    document.addEventListener('click', this.handleClick.bind(this), true);
-    document.addEventListener('mouseover', this.handleMouseOver.bind(this), true);
-    document.addEventListener('mouseout', this.handleMouseOut.bind(this), true);
-    document.addEventListener('keydown', this.handleKeyDown.bind(this));
+    // Usar las referencias guardadas para poder removerlas después
+    document.addEventListener('click', this.boundHandleClick, true);
+    document.addEventListener('mouseover', this.boundHandleMouseOver, true);
+    document.addEventListener('mouseout', this.boundHandleMouseOut, true);
+    document.addEventListener('keydown', this.boundHandleKeyDown);
   }
 
   /**
    * Desvincular eventos del DOM
    */
   private unbindEvents(): void {
-    document.removeEventListener('click', this.handleClick.bind(this), true);
-    document.removeEventListener('mouseover', this.handleMouseOver.bind(this), true);
-    document.removeEventListener('mouseout', this.handleMouseOut.bind(this), true);
-    document.removeEventListener('keydown', this.handleKeyDown.bind(this));
+    // Usar las mismas referencias para remover correctamente
+    document.removeEventListener('click', this.boundHandleClick, true);
+    document.removeEventListener('mouseover', this.boundHandleMouseOver, true);
+    document.removeEventListener('mouseout', this.boundHandleMouseOut, true);
+    document.removeEventListener('keydown', this.boundHandleKeyDown);
   }
 
   /**
@@ -61,7 +76,12 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
   private handleClick(event: MouseEvent): void {
     if (!this.isEnabled) return;
     
-    const target = event.target as HTMLElement;
+    let target = event.target as HTMLElement;
+    
+    // Si el target es un nodo de texto o similar, obtener el elemento padre
+    if (target.nodeType !== Node.ELEMENT_NODE) {
+      target = target.parentElement as HTMLElement;
+    }
     
     // Verificar si el elemento debe ser excluido
     if (this.shouldExcludeElement(target)) {
@@ -71,7 +91,13 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
     event.preventDefault();
     event.stopPropagation();
     
-    this.selectElement(target);
+    // Buscar el elemento más específico en el punto del click
+    const elementAtPoint = this.getElementAtPoint(event.clientX, event.clientY);
+    if (elementAtPoint && !this.shouldExcludeElement(elementAtPoint)) {
+      this.selectElement(elementAtPoint);
+    } else {
+      this.selectElement(target);
+    }
   }
 
   /**
@@ -80,16 +106,31 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
   private handleMouseOver(event: MouseEvent): void {
     if (!this.isEnabled) return;
     
-    const target = event.target as HTMLElement;
+    let target = event.target as HTMLElement;
+    
+    // Si el target es un nodo de texto, obtener el elemento padre
+    if (target.nodeType !== Node.ELEMENT_NODE) {
+      target = target.parentElement as HTMLElement;
+    }
     
     // Verificar si el elemento debe ser excluido
     if (this.shouldExcludeElement(target)) {
       return;
     }
 
-    this.hoveredElement = target;
-    this.updateOverlay(target, false);
-    this.emit('element:hover', target);
+    // Buscar el elemento más específico en el punto del mouse
+    const elementAtPoint = this.getElementAtPoint(event.clientX, event.clientY);
+    const elementToHighlight = elementAtPoint && !this.shouldExcludeElement(elementAtPoint) ? elementAtPoint : target;
+
+    // No actualizar el overlay si estamos sobre el elemento seleccionado
+    // (para que se mantenga el estilo de "seleccionado")
+    if (this.selectedElement && elementToHighlight === this.selectedElement) {
+      return;
+    }
+
+    this.hoveredElement = elementToHighlight;
+    this.updateOverlay(elementToHighlight, false);
+    this.emit('element:hover', elementToHighlight);
   }
 
   /**
@@ -125,18 +166,51 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
   }
 
   /**
+   * Obtener el elemento más específico en un punto dado
+   * Esto ayuda a seleccionar el elemento correcto incluso si hay overlays
+   */
+  private getElementAtPoint(x: number, y: number): HTMLElement | null {
+    // Ocultar temporalmente el overlay para obtener el elemento debajo
+    const originalDisplay = this.overlay?.style.display;
+    if (this.overlay) {
+      this.overlay.style.display = 'none';
+    }
+    
+    const element = document.elementFromPoint(x, y) as HTMLElement;
+    
+    // Restaurar el overlay
+    if (this.overlay && originalDisplay) {
+      this.overlay.style.display = originalDisplay;
+    }
+    
+    return element;
+  }
+
+  /**
    * Verificar si un elemento debe ser excluido de la selección
    */
   private shouldExcludeElement(element: HTMLElement): boolean {
+    if (!element) return true;
+    
     // Excluir elementos del propio editor
     for (const selector of this.excludeSelectors) {
-      if (element.matches(selector) || element.closest(selector)) {
-        return true;
+      try {
+        if (element.matches(selector) || element.closest(selector)) {
+          return true;
+        }
+      } catch (e) {
+        // Ignorar errores de selectores inválidos
+        continue;
       }
     }
     
     // Excluir elementos del overlay
     if (this.overlay && (element === this.overlay || this.overlay.contains(element))) {
+      return true;
+    }
+    
+    // Excluir body y html
+    if (element === document.body || element === document.documentElement) {
       return true;
     }
     
@@ -152,18 +226,18 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
     const rect = element.getBoundingClientRect();
     
     // Diferentes estilos para hover vs seleccionado
-    const borderColor = isSelected ? '#4AEDFF' : '#4AEDFF';
-    const backgroundColor = isSelected ? 'rgba(74, 237, 255, 0.15)' : 'rgba(74, 237, 255, 0.1)';
-    const borderWidth = isSelected ? '2px' : '2px';
-    const boxShadow = isSelected ? '0 0 0 1px rgba(74, 237, 255, 0.3)' : 'none';
+    const borderColor = isSelected ? '#10b981' : '#4AEDFF';
+    const backgroundColor = isSelected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(74, 237, 255, 0.1)';
+    const borderWidth = isSelected ? '3px' : '2px';
+    const boxShadow = isSelected ? '0 0 0 2px rgba(16, 185, 129, 0.4), inset 0 0 0 2px rgba(16, 185, 129, 0.2)' : 'none';
     
     this.overlay.style.cssText = `
       position: fixed;
-      pointer-events: none;
+      pointer-events: none !important;
       border: ${borderWidth} solid ${borderColor};
       background: ${backgroundColor};
       z-index: 9998;
-      transition: all 0.1s ease;
+      transition: all 0.15s ease;
       display: block;
       top: ${rect.top}px;
       left: ${rect.left}px;
@@ -198,6 +272,11 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
     };
     
     this.emit('element:selected', element);
+    
+    // IMPORTANTE: Mantener el cursor en crosshair para poder seguir seleccionando
+    if (this.isEnabled) {
+      document.body.style.cursor = 'crosshair';
+    }
   }
 
   /**
@@ -228,6 +307,11 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
   public enable(): void {
     this.isEnabled = true;
     document.body.style.cursor = 'crosshair';
+    
+    // Asegurar que los event listeners estén activos
+    this.unbindEvents();
+    this.bindEvents();
+    
     this.emit('inspector:toggle', true);
   }
 
@@ -239,6 +323,7 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
     document.body.style.cursor = '';
     this.hideOverlay();
     this.hoveredElement = null;
+    this.selectedElement = null;
     this.emit('inspector:toggle', false);
   }
 
