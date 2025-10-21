@@ -17,6 +17,8 @@ import { SpacingPanel, type SpacingProperties } from './SpacingPanel';
 import './SpacingPanel.css';
 import { TypographyPanel, type TypographyProperties } from './TypographyPanel';
 import './TypographyPanel.css';
+import { FiltersPanel, type FilterProperties } from './FiltersPanel';
+import './FiltersPanel.css';
 import './InspectorAccordion.css';
 import { tailwindClasses } from '../utils/tailwindClasses';
 import { injectTailwindClass } from '../utils/tailwindJIT';
@@ -40,6 +42,7 @@ export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private transformPanel: TransformPanel | null = null;
   private spacingPanel: SpacingPanel | null = null;
   private typographyPanel: TypographyPanel | null = null;
+  private filtersPanel: FiltersPanel | null = null;
   
   // Tailwind: Rastrear clases deshabilitadas (exist en la lista pero no aplicadas al elemento)
   private disabledTailwindClasses: Set<string> = new Set();
@@ -435,11 +438,12 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
       this.initializeHTMLNavigator();
     }
     
-    // Inicializar TransformPanel, SpacingPanel y TypographyPanel si la pestaña Design está activa
+    // Inicializar todos los paneles si la pestaña Design está activa
     if (this.activeTab === 'design' && this.selectedElement) {
       this.initializeTransformPanel();
       this.initializeSpacingPanel();
       this.initializeTypographyPanel();
+      this.initializeFiltersPanel();
       // Inicializar acordeones
       setTimeout(() => this.initializeAccordions(), 100);
     }
@@ -699,6 +703,135 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
   }
 
   /**
+   * Inicializar FiltersPanel
+   */
+  private initializeFiltersPanel(): void {
+    const container = this.panelElement?.querySelector('#filters-panel-container') as HTMLElement;
+    if (container && this.selectedElement) {
+      // Destruir instancia anterior si existe
+      if (this.filtersPanel) {
+        this.filtersPanel.destroy();
+      }
+
+      // Obtener propiedades actuales del elemento
+      const computedStyle = window.getComputedStyle(this.selectedElement);
+      const filterString = computedStyle.filter;
+
+      // Crear nueva instancia con propiedades iniciales
+      this.filtersPanel = new FiltersPanel({
+        container: container,
+        onChange: (props) => {
+          this.applyFiltersToElement(props);
+        }
+      });
+
+      // Parsear filtros existentes
+      const filters = this.parseFilters(filterString);
+      this.filtersPanel.setProperties(filters);
+    }
+  }
+
+  /**
+   * Parsear string de filtros CSS
+   */
+  private parseFilters(filterString: string): Partial<FilterProperties> {
+    const filters: Partial<FilterProperties> = {};
+    
+    if (!filterString || filterString === 'none') {
+      return {
+        blur: 0,
+        contrast: 100,
+        brightness: 100,
+        saturate: 100,
+        invert: 0,
+        grayscale: 0,
+        sepia: 0,
+        hueRotate: 0,
+        opacity: 100
+      };
+    }
+
+    // Parsear blur
+    const blurMatch = filterString.match(/blur\(([\d.]+)px\)/);
+    if (blurMatch) filters.blur = parseFloat(blurMatch[1]);
+
+    // Parsear contrast
+    const contrastMatch = filterString.match(/contrast\(([\d.]+)%?\)/);
+    if (contrastMatch) filters.contrast = parseFloat(contrastMatch[1]);
+
+    // Parsear brightness
+    const brightnessMatch = filterString.match(/brightness\(([\d.]+)%?\)/);
+    if (brightnessMatch) filters.brightness = parseFloat(brightnessMatch[1]);
+
+    // Parsear saturate
+    const saturateMatch = filterString.match(/saturate\(([\d.]+)%?\)/);
+    if (saturateMatch) filters.saturate = parseFloat(saturateMatch[1]);
+
+    // Parsear invert
+    const invertMatch = filterString.match(/invert\(([\d.]+)%?\)/);
+    if (invertMatch) filters.invert = parseFloat(invertMatch[1]);
+
+    // Parsear grayscale
+    const grayscaleMatch = filterString.match(/grayscale\(([\d.]+)%?\)/);
+    if (grayscaleMatch) filters.grayscale = parseFloat(grayscaleMatch[1]);
+
+    // Parsear sepia
+    const sepiaMatch = filterString.match(/sepia\(([\d.]+)%?\)/);
+    if (sepiaMatch) filters.sepia = parseFloat(sepiaMatch[1]);
+
+    // Parsear hue-rotate
+    const hueMatch = filterString.match(/hue-rotate\(([\d.]+)deg\)/);
+    if (hueMatch) filters.hueRotate = parseFloat(hueMatch[1]);
+
+    // Parsear opacity
+    const opacityMatch = filterString.match(/opacity\(([\d.]+)%?\)/);
+    if (opacityMatch) filters.opacity = parseFloat(opacityMatch[1]);
+
+    return filters;
+  }
+
+  /**
+   * Aplicar filtros al elemento seleccionado
+   */
+  private applyFiltersToElement(props: FilterProperties): void {
+    if (!this.selectedElement) return;
+
+    const filters: string[] = [];
+
+    // Agregar cada filtro si no está en su valor por defecto
+    if (props.blur > 0) {
+      filters.push(`blur(${props.blur}px)`);
+    }
+    if (props.contrast !== 100) {
+      filters.push(`contrast(${props.contrast}%)`);
+    }
+    if (props.brightness !== 100) {
+      filters.push(`brightness(${props.brightness}%)`);
+    }
+    if (props.saturate !== 100) {
+      filters.push(`saturate(${props.saturate}%)`);
+    }
+    if (props.invert > 0) {
+      filters.push(`invert(${props.invert}%)`);
+    }
+    if (props.grayscale > 0) {
+      filters.push(`grayscale(${props.grayscale}%)`);
+    }
+    if (props.sepia > 0) {
+      filters.push(`sepia(${props.sepia}%)`);
+    }
+    if (props.hueRotate !== 0) {
+      filters.push(`hue-rotate(${props.hueRotate}deg)`);
+    }
+    if (props.opacity !== 100) {
+      filters.push(`opacity(${props.opacity}%)`);
+    }
+
+    // Aplicar filtros o 'none' si no hay filtros activos
+    this.selectedElement.style.filter = filters.length > 0 ? filters.join(' ') : 'none';
+  }
+
+  /**
    * Aplicar transformaciones al elemento seleccionado
    */
   private applyTransformToElement(props: TransformProperties): void {
@@ -857,6 +990,19 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
             </button>
             <div class="accordion-content" data-accordion-content="typography">
               <div id="typography-panel-container"></div>
+            </div>
+          </div>
+          
+          <!-- Filters Panel -->
+          <div class="accordion-item" data-panel="filters">
+            <button class="accordion-header" data-accordion-trigger="filters">
+              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Filters</span>
+            </button>
+            <div class="accordion-content" data-accordion-content="filters">
+              <div id="filters-panel-container"></div>
             </div>
           </div>
         </div>
