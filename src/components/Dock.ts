@@ -434,14 +434,17 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   private updateConfigViewerButtonState(active: boolean): void {
     const configViewerBtn = this.dockElement?.querySelector('[data-action="tailwind-config-viewer"]') as HTMLElement;
     if (configViewerBtn) {
+      const indicator = configViewerBtn.querySelector('.dock-active-indicator') as HTMLElement;
       if (active) {
         configViewerBtn.classList.add('active');
         configViewerBtn.style.background = 'rgba(59, 130, 246, 0.2)';
         configViewerBtn.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+        if (indicator) indicator.style.opacity = '1';
       } else {
         configViewerBtn.classList.remove('active');
         configViewerBtn.style.background = '';
         configViewerBtn.style.borderColor = '';
+        if (indicator) indicator.style.opacity = '0';
       }
     }
   }
@@ -517,12 +520,15 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
     
     const colorPaletteBtn = this.dockElement.querySelector('[data-action="color-palette"]') as HTMLElement;
     if (colorPaletteBtn) {
+      const indicator = colorPaletteBtn.querySelector('.dock-active-indicator') as HTMLElement;
       if (active) {
         colorPaletteBtn.classList.add('active');
         colorPaletteBtn.style.background = 'rgba(0, 122, 255, 0.3)';
+        if (indicator) indicator.style.opacity = '1';
       } else {
         colorPaletteBtn.classList.remove('active');
         colorPaletteBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+        if (indicator) indicator.style.opacity = '0';
       }
     }
   }
@@ -560,14 +566,17 @@ export class Dock extends EventEmitter<StyloEditorEvents> {
   private updateAssetManagerButtonState(active: boolean): void {
     const assetBtn = this.dockElement?.querySelector('[data-action="assets"], [data-action="asset-manager"]') as HTMLElement;
     if (assetBtn) {
+      const indicator = assetBtn.querySelector('.dock-active-indicator') as HTMLElement;
       if (active) {
         assetBtn.classList.add('active');
         assetBtn.style.background = 'rgba(156, 39, 176, 0.2)';
         assetBtn.style.borderColor = 'rgba(156, 39, 176, 0.4)';
+        if (indicator) indicator.style.opacity = '1';
       } else {
         assetBtn.classList.remove('active');
         assetBtn.style.background = '';
         assetBtn.style.borderColor = '';
+        if (indicator) indicator.style.opacity = '0';
       }
     }
   }

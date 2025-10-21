@@ -1,0 +1,242 @@
+/* SpacingPanel Visual Editor Styles */
+
+.spacing-panel {
+  width: 100%;
+  margin-bottom: 25px;
+  position: relative;
+  border-radius: 10px;
+}
+
+.spacing-visual-container {
+  position: relative;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Placeholders visuales */
+.spacing-placeholder {
+  position: absolute;
+  background: rgba(99, 102, 241, 0.1);
+  pointer-events: none;
+}
+
+.spacing-placeholder.horizontal {
+  left: 0;
+  right: 0;
+  height: 30px;
+}
+
+.spacing-placeholder.horizontal.top {
+  top: 0;
+}
+
+.spacing-placeholder.horizontal.bottom {
+  bottom: 0;
+}
+
+.spacing-placeholder.vertical {
+  top: 0;
+  bottom: 0;
+  width: 30px;
+}
+
+.spacing-placeholder.vertical.left {
+  left: 0;
+}
+
+.spacing-placeholder.vertical.right {
+  right: 0;
+}
+
+/* Contenedores */
+.spacing-margin-container {
+  position: relative;
+  padding: 24px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.spacing-padding-container {
+  position: relative;
+  padding: 40px 32px;
+  margin: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Etiquetas */
+.spacing-label {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Controles de spacing */
+.spacing-control {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.spacing-control:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Posicionamiento de controles de margin */
+.spacing-control.margin-top {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.spacing-control.margin-bottom {
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.spacing-control.margin-left {
+  left: -48px;
+  top: 42%;
+  transform: translateY(-6%) rotate(-90deg);
+  transform-origin: center;
+  height: 44px;
+  width: 45%;
+}
+
+.spacing-control.margin-right {
+  right: -48px;
+  top: 42%;
+  transform: translateY(-6%) rotate(90deg);
+  transform-origin: center;
+  height: 44px;
+  width: 45%;
+}
+
+/* Posicionamiento de controles de padding */
+.spacing-control.padding-top {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.spacing-control.padding-bottom {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.spacing-control.padding-left {
+  left: -19px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: center;
+}
+
+.spacing-control.padding-right {
+  right: -19px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+  transform-origin: center;
+}
+
+/* Drag handle */
+.spacing-drag-handle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: ns-resize;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.spacing-drag-handle:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.spacing-control.margin-left .spacing-drag-handle,
+.spacing-control.margin-right .spacing-drag-handle,
+.spacing-control.padding-left .spacing-drag-handle,
+.spacing-control.padding-right .spacing-drag-handle {
+  cursor: ew-resize;
+}
+
+/* Input group */
+.spacing-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.spacing-input-group input[type="text"] {
+  width: 40px;
+  text-align: center;
+  font-size: 11px;
+  color: white;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+}
+
+.spacing-input-group input[type="text"]:focus {
+  color: rgba(99, 102, 241, 1);
+}
+
+.spacing-input-group select {
+  width: 50px;
+  font-size: 11px;
+  color: white;
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  border-radius: 4px;
+  padding: 2px 4px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.spacing-input-group select:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.spacing-input-group select:focus {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Elemento preview */
+.spacing-element-preview {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.spacing-element-info {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}

@@ -13,6 +13,11 @@ import { ScrollArea } from './ScrollArea';
 import { Dock } from './Dock';
 import { HTMLNavigator } from './HTMLNavigator';
 import { TransformPanel, type TransformProperties } from './TransformPanel';
+import { SpacingPanel, type SpacingProperties } from './SpacingPanel';
+import './SpacingPanel.css';
+import { TypographyPanel, type TypographyProperties } from './TypographyPanel';
+import './TypographyPanel.css';
+import './InspectorAccordion.css';
 import { tailwindClasses } from '../utils/tailwindClasses';
 import { injectTailwindClass } from '../utils/tailwindJIT';
 import { tailwindColors } from '../utils/tailwindColorsData';
@@ -33,6 +38,8 @@ export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private dock: Dock | null = null;
   private htmlNavigator: HTMLNavigator | null = null;
   private transformPanel: TransformPanel | null = null;
+  private spacingPanel: SpacingPanel | null = null;
+  private typographyPanel: TypographyPanel | null = null;
   
   // Tailwind: Rastrear clases deshabilitadas (exist en la lista pero no aplicadas al elemento)
   private disabledTailwindClasses: Set<string> = new Set();
@@ -428,10 +435,55 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
       this.initializeHTMLNavigator();
     }
     
-    // Inicializar TransformPanel si la pestaña Design está activa
+    // Inicializar TransformPanel, SpacingPanel y TypographyPanel si la pestaña Design está activa
     if (this.activeTab === 'design' && this.selectedElement) {
       this.initializeTransformPanel();
+      this.initializeSpacingPanel();
+      this.initializeTypographyPanel();
+      // Inicializar acordeones
+      setTimeout(() => this.initializeAccordions(), 100);
     }
+  }
+
+  /**
+   * Inicializar acordeones del inspector
+   */
+  private initializeAccordions(): void {
+    const accordionTriggers = this.panelElement?.querySelectorAll('[data-accordion-trigger]');
+    
+    if (!accordionTriggers) return;
+
+    // Abrir el primer acordeón por defecto
+    const firstItem = this.panelElement?.querySelector('.accordion-item');
+    if (firstItem) {
+      firstItem.classList.add('active');
+    }
+
+    accordionTriggers.forEach(trigger => {
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        const button = e.currentTarget as HTMLElement;
+        const panelName = button.dataset.accordionTrigger;
+        const accordionItem = button.closest('.accordion-item');
+        
+        if (accordionItem) {
+          // Toggle active state
+          const isActive = accordionItem.classList.contains('active');
+          
+          // Opción 1: Solo un panel abierto a la vez (descomentar si prefieres esto)
+          // this.panelElement?.querySelectorAll('.accordion-item').forEach(item => {
+          //   item.classList.remove('active');
+          // });
+          
+          // Opción 2: Múltiples paneles abiertos (comportamiento actual)
+          if (isActive) {
+            accordionItem.classList.remove('active');
+          } else {
+            accordionItem.classList.add('active');
+          }
+        }
+      });
+    });
   }
 
   /**
@@ -508,6 +560,141 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
         rotationUnit: 'deg',
         sizeUnit: 'px'
       });
+    }
+  }
+
+  /**
+   * Inicializar SpacingPanel
+   */
+  private initializeSpacingPanel(): void {
+    const container = this.panelElement?.querySelector('#spacing-panel-container') as HTMLElement;
+    if (container && this.selectedElement) {
+      // Destruir instancia anterior si existe
+      if (this.spacingPanel) {
+        this.spacingPanel.destroy();
+      }
+
+      // Obtener propiedades actuales del elemento
+      const computedStyle = window.getComputedStyle(this.selectedElement);
+      
+      // Helper para parsear valores de spacing
+      const parseSpacing = (value: string): { value: number; unit: string } => {
+        const match = value.match(/^(-?\d*\.?\d+)(.*)$/);
+        return match ? { value: parseFloat(match[1]), unit: match[2] || 'px' } : { value: 0, unit: 'px' };
+      };
+
+      // Crear nueva instancia con propiedades iniciales
+      this.spacingPanel = new SpacingPanel({
+        container: container,
+        onChange: (props) => {
+          this.applySpacingToElement(props);
+        }
+      });
+
+      // Establecer propiedades iniciales desde el elemento
+      this.spacingPanel.setProperties({
+        marginTop: parseSpacing(computedStyle.marginTop),
+        marginRight: parseSpacing(computedStyle.marginRight),
+        marginBottom: parseSpacing(computedStyle.marginBottom),
+        marginLeft: parseSpacing(computedStyle.marginLeft),
+        paddingTop: parseSpacing(computedStyle.paddingTop),
+        paddingRight: parseSpacing(computedStyle.paddingRight),
+        paddingBottom: parseSpacing(computedStyle.paddingBottom),
+        paddingLeft: parseSpacing(computedStyle.paddingLeft),
+      });
+    }
+  }
+
+  /**
+   * Aplicar spacing al elemento seleccionado
+   */
+  private applySpacingToElement(props: SpacingProperties): void {
+    if (!this.selectedElement) return;
+
+    // Aplicar margins
+    this.selectedElement.style.marginTop = `${props.marginTop.value}${props.marginTop.unit}`;
+    this.selectedElement.style.marginRight = `${props.marginRight.value}${props.marginRight.unit}`;
+    this.selectedElement.style.marginBottom = `${props.marginBottom.value}${props.marginBottom.unit}`;
+    this.selectedElement.style.marginLeft = `${props.marginLeft.value}${props.marginLeft.unit}`;
+    
+    // Aplicar paddings
+    this.selectedElement.style.paddingTop = `${props.paddingTop.value}${props.paddingTop.unit}`;
+    this.selectedElement.style.paddingRight = `${props.paddingRight.value}${props.paddingRight.unit}`;
+    this.selectedElement.style.paddingBottom = `${props.paddingBottom.value}${props.paddingBottom.unit}`;
+    this.selectedElement.style.paddingLeft = `${props.paddingLeft.value}${props.paddingLeft.unit}`;
+  }
+
+  /**
+   * Inicializar TypographyPanel
+   */
+  private initializeTypographyPanel(): void {
+    const container = this.panelElement?.querySelector('#typography-panel-container') as HTMLElement;
+    if (container && this.selectedElement) {
+      // Destruir instancia anterior si existe
+      if (this.typographyPanel) {
+        this.typographyPanel.destroy();
+      }
+
+      // Obtener propiedades actuales del elemento
+      const computedStyle = window.getComputedStyle(this.selectedElement);
+
+      // Crear nueva instancia con propiedades iniciales
+      this.typographyPanel = new TypographyPanel({
+        container: container,
+        onChange: (props) => {
+          this.applyTypographyToElement(props);
+        }
+      });
+
+      // Establecer propiedades iniciales desde el elemento
+      this.typographyPanel.setProperties({
+        fontFamily: computedStyle.fontFamily.replace(/["']/g, ''),
+        fontWeight: computedStyle.fontWeight,
+        fontSize: parseFloat(computedStyle.fontSize),
+        fontSizeUnit: 'px',
+        color: computedStyle.color,
+        lineHeight: computedStyle.lineHeight,
+        textAlign: computedStyle.textAlign as any,
+        fontStyle: computedStyle.fontStyle as any,
+        textDecoration: this.parseTextDecoration(computedStyle.textDecoration),
+        useBackgroundAsTextColor: false
+      });
+    }
+  }
+
+  /**
+   * Parse text decoration from computed style
+   */
+  private parseTextDecoration(decoration: string): 'none' | 'underline' | 'line-through' {
+    if (decoration.includes('underline')) return 'underline';
+    if (decoration.includes('line-through')) return 'line-through';
+    return 'none';
+  }
+
+  /**
+   * Aplicar tipografía al elemento seleccionado
+   */
+  private applyTypographyToElement(props: TypographyProperties): void {
+    if (!this.selectedElement) return;
+
+    // Aplicar font properties
+    this.selectedElement.style.fontFamily = props.fontFamily;
+    this.selectedElement.style.fontWeight = props.fontWeight;
+    this.selectedElement.style.fontSize = `${props.fontSize}${props.fontSizeUnit}`;
+    this.selectedElement.style.lineHeight = props.lineHeight;
+    this.selectedElement.style.textAlign = props.textAlign;
+    this.selectedElement.style.fontStyle = props.fontStyle;
+    this.selectedElement.style.textDecoration = props.textDecoration;
+    
+    // Aplicar color
+    if (props.useBackgroundAsTextColor) {
+      // Usar background-clip para el efecto de texto con fondo
+      this.selectedElement.style.webkitBackgroundClip = 'text';
+      this.selectedElement.style.webkitTextFillColor = 'transparent';
+    } else {
+      this.selectedElement.style.color = props.color;
+      this.selectedElement.style.webkitBackgroundClip = '';
+      this.selectedElement.style.webkitTextFillColor = '';
     }
   }
 
@@ -616,7 +803,8 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     }
 
     return `
-      <div>
+      <div class="inspector-design-content">
+        <!-- Selected Element Info -->
         <div style="margin-bottom: 16px;">
           <h3 style="margin: 0 0 8px 0; color: #4AEDFF;">Selected Element</h3>
           <div style="
@@ -631,10 +819,46 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
           </div>
         </div>
         
-        <!-- Transform Properties Panel -->
-        <div style="margin-bottom: 16px;">
-          <h3 style="margin: 0 0 12px 0; color: #4AEDFF;">Transform</h3>
-          <div id="transform-panel-container"></div>
+        <!-- Collapsible Sections -->
+        <div class="inspector-accordion">
+          <!-- Transform Panel -->
+          <div class="accordion-item" data-panel="transform">
+            <button class="accordion-header" data-accordion-trigger="transform">
+              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Transform</span>
+            </button>
+            <div class="accordion-content" data-accordion-content="transform">
+              <div id="transform-panel-container"></div>
+            </div>
+          </div>
+          
+          <!-- Spacing Panel -->
+          <div class="accordion-item" data-panel="spacing">
+            <button class="accordion-header" data-accordion-trigger="spacing">
+              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Spacing</span>
+            </button>
+            <div class="accordion-content" data-accordion-content="spacing">
+              <div id="spacing-panel-container"></div>
+            </div>
+          </div>
+          
+          <!-- Typography Panel -->
+          <div class="accordion-item" data-panel="typography">
+            <button class="accordion-header" data-accordion-trigger="typography">
+              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Typography</span>
+            </button>
+            <div class="accordion-content" data-accordion-content="typography">
+              <div id="typography-panel-container"></div>
+            </div>
+          </div>
         </div>
       </div>
     `;

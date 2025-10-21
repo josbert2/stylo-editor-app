@@ -1,0 +1,254 @@
+/* TypographyPanel Styles */
+
+.typography-panel {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.typography-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.typography-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.typography-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: capitalize;
+}
+
+.typography-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Select Inputs */
+.typography-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.typography-select:hover {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.typography-select:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Input Group (for size controls) */
+.typography-input-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.typography-btn-minus,
+.typography-btn-plus {
+  width: 28px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.typography-btn-minus:hover,
+.typography-btn-plus:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.typography-input {
+  flex: 1;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+}
+
+.typography-unit-select {
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Color Group */
+.typography-color-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.typography-color-input {
+  width: 40px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.typography-color-input::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.typography-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.typography-color-text {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+  font-family: monospace;
+  outline: none;
+}
+
+.typography-color-text:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+/* Align Group */
+.typography-align-group {
+  display: flex;
+  gap: 4px;
+}
+
+.typography-align-btn {
+  flex: 1;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.typography-align-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.typography-align-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: rgba(99, 102, 241, 1);
+}
+
+/* Decoration Group */
+.typography-decoration-group {
+  display: flex;
+  gap: 4px;
+}
+
+.typography-decoration-btn {
+  flex: 1;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.typography-decoration-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.typography-decoration-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: rgba(99, 102, 241, 1);
+}
+
+/* Checkbox */
+.typography-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.typography-checkbox-label:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.typography-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: rgba(99, 102, 241, 1);
+}
+
+.typography-checkbox-label span {
+  flex: 1;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+  .typography-row {
+    grid-template-columns: 1fr;
+  }
+}
