@@ -118,6 +118,11 @@
   gap: 8px;
 }
 
+.typography-color-picker-container {
+  display: flex;
+  align-items: center;
+}
+
 .typography-color-input {
   width: 40px;
   height: 32px;

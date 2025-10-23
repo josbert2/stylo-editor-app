@@ -1,0 +1,103 @@
+/* Element Inspector Actions Tooltip Styles */
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+.stylo-actions-tooltip {
+  position: fixed;
+  display: none;
+  flex-direction: row;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(30, 30, 35, 0.98);
+  border: 1px solid rgba(74, 237, 255, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  z-index: 9999;
+  animation: fadeInScale 0.2s ease-out;
+  pointer-events: auto;
+}
+
+.stylo-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stylo-action-btn:hover {
+  background: rgba(74, 237, 255, 0.2);
+  border-color: rgba(74, 237, 255, 0.5);
+  color: rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 237, 255, 0.3);
+}
+
+.stylo-action-btn:active {
+  transform: translateY(0);
+}
+
+.stylo-action-delete {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.stylo-action-delete:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.stylo-action-cancel {
+  background: rgba(156, 163, 175, 0.1);
+  border-color: rgba(156, 163, 175, 0.3);
+}
+
+.stylo-action-cancel:hover {
+  background: rgba(156, 163, 175, 0.2);
+  border-color: rgba(156, 163, 175, 0.5);
+  box-shadow: 0 4px 12px rgba(156, 163, 175, 0.3);
+}
+
+.stylo-action-btn svg {
+  width: 14px;
+  height: 14px;
+}

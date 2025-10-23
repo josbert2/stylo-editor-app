@@ -3,6 +3,9 @@
  * Maneja font family, weight, size, color, line height, text align, decorations
  */
 
+import { ColorPicker } from './ColorPicker';
+import './ColorPicker.css';
+
 export interface TypographyProperties {
   fontFamily: string;
   fontWeight: string;
@@ -20,6 +23,7 @@ export class TypographyPanel {
   private container: HTMLElement;
   private properties: TypographyProperties;
   private onChange?: (props: TypographyProperties) => void;
+  private colorPicker: ColorPicker | null = null;
 
   constructor(options: {
     container?: HTMLElement;
@@ -100,17 +104,13 @@ export class TypographyPanel {
           <div class="typography-field">
             <label class="typography-label">Color</label>
             <div class="typography-color-group">
-              <input 
-                type="color" 
-                class="typography-color-input" 
-                data-property="color"
-                value="${this.rgbToHex(this.properties.color)}"
-              >
+              <div class="typography-color-picker-container" data-color-picker="main"></div>
               <input 
                 type="text" 
                 class="typography-color-text" 
                 data-property="colorText"
                 value="${this.properties.color}"
+                readonly
               >
             </div>
           </div>
@@ -313,10 +313,32 @@ export class TypographyPanel {
       input.addEventListener('input', (e) => this.handleInputChange(e));
     });
 
-    // Color input
-    const colorInput = this.container.querySelector('.typography-color-input') as HTMLInputElement;
-    if (colorInput) {
-      colorInput.addEventListener('input', (e) => this.handleColorChange(e));
+    // Initialize ColorPicker (solo si no existe)
+    const colorPickerContainer = this.container.querySelector('[data-color-picker="main"]') as HTMLElement;
+    if (colorPickerContainer && !this.colorPicker) {
+      this.colorPicker = new ColorPicker({
+        container: colorPickerContainer,
+        defaultColor: this.properties.color,
+        showAlpha: true,
+        onChange: (color) => {
+          this.properties.color = color;
+          // Actualizar el input de texto sin disparar onChange
+          const textInput = this.container.querySelector('.typography-color-text') as HTMLInputElement;
+          if (textInput) textInput.value = color;
+        },
+        onSave: (color) => {
+          this.properties.color = color;
+          // Actualizar el input de texto
+          const textInput = this.container.querySelector('.typography-color-text') as HTMLInputElement;
+          if (textInput) textInput.value = color;
+          
+          // Solo disparar onChange en onSave, no en onChange
+          if (this.onChange) this.onChange({ ...this.properties });
+        }
+      });
+    } else if (this.colorPicker && colorPickerContainer) {
+      // Si ya existe, solo actualizar el color
+      this.colorPicker.setColor(this.properties.color);
     }
 
     // Size buttons
@@ -371,18 +393,7 @@ export class TypographyPanel {
     if (this.onChange) this.onChange({ ...this.properties });
   }
 
-  private handleColorChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.properties.color = this.hexToRgb(input.value);
-    
-    // Update text input
-    const textInput = this.container.querySelector('.typography-color-text') as HTMLInputElement;
-    if (textInput) {
-      textInput.value = this.properties.color;
-    }
-    
-    if (this.onChange) this.onChange({ ...this.properties });
-  }
+
 
   private changeFontSize(delta: number): void {
     this.properties.fontSize = Math.max(1, this.properties.fontSize + delta);
@@ -445,6 +456,12 @@ export class TypographyPanel {
   }
 
   public destroy(): void {
+    // Limpiar ColorPicker
+    if (this.colorPicker) {
+      this.colorPicker.destroy();
+      this.colorPicker = null;
+    }
+    
     this.container.remove();
   }
 }

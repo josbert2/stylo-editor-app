@@ -1,0 +1,70 @@
+/* ColorPicker Component Styles - vanilla-colorful */
+
+.color-picker-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.color-picker-button:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.color-picker-button:active {
+  transform: scale(0.98);
+}
+
+/* Popup Container */
+.color-picker-popup {
+  position: fixed;
+  z-index: 10000;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  min-width: 200px;
+}
+
+/* vanilla-colorful styles override */
+.color-picker-popup hex-color-picker {
+  width: 200px;
+  height: 200px;
+}
+
+/* Input Container */
+.color-picker-input-container {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.color-picker-hex-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  font-family: monospace;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.color-picker-hex-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.color-picker-hex-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}

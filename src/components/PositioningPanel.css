@@ -1,0 +1,100 @@
+/* PositioningPanel Styles */
+
+.positioning-panel {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.positioning-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Position Field */
+.positioning-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.positioning-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: capitalize;
+}
+
+.positioning-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.positioning-select:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.positioning-select:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Offsets Grid */
+.positioning-offsets-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.positioning-offset-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.positioning-offset-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.positioning-offset-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.positioning-offset-input:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.positioning-offset-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.positioning-offset-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.positioning-offset-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}

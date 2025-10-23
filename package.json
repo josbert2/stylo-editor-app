@@ -56,7 +56,9 @@
   "dependencies": {
     "@floating-ui/dom": "^1.6.9",
     "@popperjs/core": "^2.11.8",
+    "@simonwep/pickr": "^1.9.1",
     "@tailwindcss/vite": "^4.1.13",
-    "tailwindcss": "^4.1.13"
+    "tailwindcss": "^4.1.13",
+    "vanilla-colorful": "^0.7.2"
   }
 }

@@ -1,0 +1,116 @@
+/* BorderPanel Styles */
+
+.border-panel {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.border-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Field */
+.border-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.border-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Color Group */
+.border-color-group {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+}
+
+.border-color-picker-container {
+  display: flex;
+  align-items: center;
+  min-width: 48px;
+  min-height: 48px;
+}
+
+/* Width Group */
+.border-width-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.border-width-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.border-width-input:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.border-width-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.border-unit-select {
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 70px;
+}
+
+.border-unit-select:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.border-unit-select:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+/* Style Select */
+.border-style-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.border-style-select:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.border-style-select:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}

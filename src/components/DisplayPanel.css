@@ -1,0 +1,132 @@
+/* DisplayPanel Styles */
+
+.display-panel {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.display-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Field */
+.display-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.display-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: capitalize;
+}
+
+/* Display Select */
+.display-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.display-select:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.display-select:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Opacity Group */
+.display-opacity-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.display-opacity-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(
+    to right, 
+    rgba(99, 102, 241, 1) 0%, 
+    rgba(99, 102, 241, 1) var(--value, 100%), 
+    rgba(255, 255, 255, 0.1) var(--value, 100%), 
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.display-opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+}
+
+.display-opacity-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.display-opacity-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+}
+
+.display-opacity-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.display-opacity-value {
+  width: 60px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.display-opacity-value:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.display-opacity-value:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}

@@ -19,6 +19,18 @@ import { TypographyPanel, type TypographyProperties } from './TypographyPanel';
 import './TypographyPanel.css';
 import { FiltersPanel, type FilterProperties } from './FiltersPanel';
 import './FiltersPanel.css';
+import { TextShadowPanel, type TextShadowProperties } from './TextShadowPanel';
+import './TextShadowPanel.css';
+import { BoxShadowPanel, type BoxShadowProperties } from './BoxShadowPanel';
+import './BoxShadowPanel.css';
+import { PositioningPanel, type PositioningProperties } from './PositioningPanel';
+import './PositioningPanel.css';
+import { BorderPanel, type BorderProperties } from './BorderPanel';
+import './BorderPanel.css';
+import { DisplayPanel, type DisplayProperties } from './DisplayPanel';
+import './DisplayPanel.css';
+import { BackgroundPanel, type BackgroundProperties } from './BackgroundPanel';
+import './BackgroundPanel.css';
 import './InspectorAccordion.css';
 import { tailwindClasses } from '../utils/tailwindClasses';
 import { injectTailwindClass } from '../utils/tailwindJIT';
@@ -43,6 +55,12 @@ export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private spacingPanel: SpacingPanel | null = null;
   private typographyPanel: TypographyPanel | null = null;
   private filtersPanel: FiltersPanel | null = null;
+  private textShadowPanel: TextShadowPanel | null = null;
+  private boxShadowPanel: BoxShadowPanel | null = null;
+  private positioningPanel: PositioningPanel | null = null;
+  private borderPanel: BorderPanel | null = null;
+  private displayPanel: DisplayPanel | null = null;
+  private backgroundPanel: BackgroundPanel | null = null;
   
   // Tailwind: Rastrear clases deshabilitadas (exist en la lista pero no aplicadas al elemento)
   private disabledTailwindClasses: Set<string> = new Set();
@@ -441,11 +459,21 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     // Inicializar todos los paneles si la pestaña Design está activa
     if (this.activeTab === 'design' && this.selectedElement) {
       this.initializeTransformPanel();
+      this.initializePositioningPanel();
       this.initializeSpacingPanel();
+      this.initializeBorderPanel();
+      this.initializeDisplayPanel();
+      this.initializeBackgroundPanel();
       this.initializeTypographyPanel();
       this.initializeFiltersPanel();
-      // Inicializar acordeones
-      setTimeout(() => this.initializeAccordions(), 100);
+      this.initializeTextShadowPanel();
+      this.initializeBoxShadowPanel();
+      // Inicializar acordeones después de que todo esté renderizado
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this.initializeAccordions();
+        });
+      });
     }
   }
 
@@ -832,6 +860,343 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
   }
 
   /**
+   * Inicializar TextShadowPanel
+   */
+  private initializeTextShadowPanel(): void {
+    const container = this.panelElement?.querySelector('#text-shadow-panel-container') as HTMLElement;
+    if (container && this.selectedElement) {
+      // Destruir instancia anterior si existe
+      if (this.textShadowPanel) {
+        this.textShadowPanel.destroy();
+      }
+
+      // Obtener propiedades actuales del elemento
+      const computedStyle = window.getComputedStyle(this.selectedElement);
+      const textShadowString = computedStyle.textShadow;
+
+      // Crear nueva instancia con propiedades iniciales
+      this.textShadowPanel = new TextShadowPanel({
+        container: container,
+        onChange: (props) => {
+          this.applyTextShadowToElement(props);
+        }
+      });
+
+      // Parsear text shadows existentes
+      const shadows = this.parseTextShadow(textShadowString);
+      if (shadows.length > 0) {
+        this.textShadowPanel.setProperties({ shadows });
+      }
+    }
+  }
+
+  /**
+   * Parsear string de text-shadow CSS
+   */
+  private parseTextShadow(shadowString: string): TextShadowProperties['shadows'] {
+    if (!shadowString || shadowString === 'none') {
+      return [];
+    }
+
+    const shadows: TextShadowProperties['shadows'] = [];
+    let nextId = 1;
+
+    // Dividir por comas (pero no las que están dentro de rgb/rgba)
+    const shadowParts = shadowString.split(/,(?![^(]*\))/);
+
+    shadowParts.forEach(part => {
+      part = part.trim();
+      
+      // Parsear: offsetX offsetY blur color
+      // Ejemplo: "2px 2px 4px rgba(0, 0, 0, 0.5)"
+      const rgbaMatch = part.match(/([-\d.]+)px\s+([-\d.]+)px(?:\s+([-\d.]+)px)?\s+(rgba?\([^)]+\))/);
+      const hexMatch = part.match(/([-\d.]+)px\s+([-\d.]+)px(?:\s+([-\d.]+)px)?\s+(#[0-9a-fA-F]{3,6})/);
+      const namedMatch = part.match(/([-\d.]+)px\s+([-\d.]+)px(?:\s+([-\d.]+)px)?\s+([a-z]+)/);
+
+      let match = rgbaMatch || hexMatch || namedMatch;
+
+      if (match) {
+        shadows.push({
+          id: `shadow-${nextId++}`,
+          offsetX: parseFloat(match[1]),
+          offsetY: parseFloat(match[2]),
+          blur: match[3] ? parseFloat(match[3]) : 0,
+          color: match[4]
+        });
+      }
+    });
+
+    return shadows;
+  }
+
+  /**
+   * Aplicar text shadows al elemento seleccionado
+   */
+  private applyTextShadowToElement(props: TextShadowProperties): void {
+    if (!this.selectedElement) return;
+
+    if (props.shadows.length === 0) {
+      this.selectedElement.style.textShadow = 'none';
+    } else {
+      const shadowStrings = props.shadows.map(shadow => 
+        `${shadow.offsetX}px ${shadow.offsetY}px ${shadow.blur}px ${shadow.color}`
+      );
+      this.selectedElement.style.textShadow = shadowStrings.join(', ');
+    }
+  }
+
+  /**
+   * Inicializar BoxShadowPanel
+   */
+  private initializeBoxShadowPanel(): void {
+    const container = this.panelElement?.querySelector('#box-shadow-panel-container') as HTMLElement;
+    if (container && this.selectedElement) {
+      // Destruir instancia anterior si existe
+      if (this.boxShadowPanel) {
+        this.boxShadowPanel.destroy();
+      }
+
+      // Obtener propiedades actuales del elemento
+      const computedStyle = window.getComputedStyle(this.selectedElement);
+      const boxShadowString = computedStyle.boxShadow;
+
+      // Crear nueva instancia
+      this.boxShadowPanel = new BoxShadowPanel({
+        container: container,
+        onChange: (props) => {
+          this.applyBoxShadowToElement(props);
+        }
+      });
+
+      // Establecer el box-shadow actual
+      if (boxShadowString && boxShadowString !== 'none') {
+        this.boxShadowPanel.setProperties({ currentShadow: boxShadowString });
+      }
+    }
+  }
+
+  /**
+   * Aplicar box shadow al elemento seleccionado
+   */
+  private applyBoxShadowToElement(props: BoxShadowProperties): void {
+    if (!this.selectedElement) return;
+
+    this.selectedElement.style.boxShadow = props.currentShadow;
+  }
+
+  /**
+   * Inicializar PositioningPanel
+   */
+  private initializePositioningPanel(): void {
+    const container = this.panelElement?.querySelector('#positioning-panel-container') as HTMLElement;
+    if (container && this.selectedElement) {
+      // Destruir instancia anterior si existe
+      if (this.positioningPanel) {
+        this.positioningPanel.destroy();
+      }
+
+      // Obtener propiedades actuales del elemento
+      const computedStyle = window.getComputedStyle(this.selectedElement);
+
+      // Crear nueva instancia con propiedades iniciales
+      this.positioningPanel = new PositioningPanel({
+        container: container,
+        onChange: (props) => {
+          this.applyPositioningToElement(props);
+        }
+      });
+
+      // Establecer valores actuales
+      this.positioningPanel.setProperties({
+        position: computedStyle.position as PositioningProperties['position'],
+        top: computedStyle.top,
+        right: computedStyle.right,
+        bottom: computedStyle.bottom,
+        left: computedStyle.left
+      });
+    }
+  }
+
+  /**
+   * Aplicar posicionamiento al elemento seleccionado
+   */
+  private applyPositioningToElement(props: PositioningProperties): void {
+    if (!this.selectedElement) return;
+
+    this.selectedElement.style.position = props.position;
+    this.selectedElement.style.top = props.top;
+    this.selectedElement.style.right = props.right;
+    this.selectedElement.style.bottom = props.bottom;
+    this.selectedElement.style.left = props.left;
+  }
+
+  /**
+   * Inicializar BorderPanel
+   */
+  private initializeBorderPanel(): void {
+    const container = this.panelElement?.querySelector('#border-panel-container') as HTMLElement;
+    if (container && this.selectedElement) {
+      // Destruir instancia anterior si existe
+      if (this.borderPanel) {
+        this.borderPanel.destroy();
+      }
+
+      // Obtener propiedades actuales del elemento
+      const computedStyle = window.getComputedStyle(this.selectedElement);
+
+      // Parsear border-width
+      const borderWidth = computedStyle.borderWidth;
+      const widthMatch = borderWidth.match(/(\d+\.?\d*)([a-z%]+)?/);
+      const width = widthMatch ? parseFloat(widthMatch[1]) : 1;
+      const widthUnit = widthMatch && widthMatch[2] ? widthMatch[2] : 'px';
+
+      // Crear nueva instancia
+      this.borderPanel = new BorderPanel({
+        container: container,
+        onChange: (props) => {
+          this.applyBorderToElement(props);
+        }
+      });
+
+      // Establecer valores actuales
+      this.borderPanel.setProperties({
+        color: computedStyle.borderColor,
+        width: width,
+        widthUnit: widthUnit,
+        style: computedStyle.borderStyle
+      });
+    }
+  }
+
+  /**
+   * Aplicar border al elemento seleccionado
+   */
+  private applyBorderToElement(props: BorderProperties): void {
+    if (!this.selectedElement) return;
+
+    this.selectedElement.style.borderColor = props.color;
+    this.selectedElement.style.borderWidth = `${props.width}${props.widthUnit}`;
+    this.selectedElement.style.borderStyle = props.style;
+  }
+
+  /**
+   * Inicializar DisplayPanel
+   */
+  private initializeDisplayPanel(): void {
+    const container = this.panelElement?.querySelector('#display-panel-container') as HTMLElement;
+    if (container && this.selectedElement) {
+      // Destruir instancia anterior si existe
+      if (this.displayPanel) {
+        this.displayPanel.destroy();
+      }
+
+      // Obtener propiedades actuales del elemento
+      const computedStyle = window.getComputedStyle(this.selectedElement);
+
+      // Crear nueva instancia
+      this.displayPanel = new DisplayPanel({
+        container: container,
+        onChange: (props) => {
+          this.applyDisplayToElement(props);
+        }
+      });
+
+      // Establecer valores actuales
+      const opacity = parseFloat(computedStyle.opacity) * 100;
+      this.displayPanel.setProperties({
+        display: computedStyle.display,
+        opacity: opacity
+      });
+    }
+  }
+
+  /**
+   * Aplicar display al elemento seleccionado
+   */
+  private applyDisplayToElement(props: DisplayProperties): void {
+    if (!this.selectedElement) return;
+
+    this.selectedElement.style.display = props.display;
+    this.selectedElement.style.opacity = (props.opacity / 100).toString();
+  }
+
+  /**
+   * Inicializar BackgroundPanel
+   */
+  private initializeBackgroundPanel(): void {
+    const container = this.panelElement?.querySelector('#background-panel-container') as HTMLElement;
+    if (container && this.selectedElement) {
+      // Destruir instancia anterior si existe
+      if (this.backgroundPanel) {
+        this.backgroundPanel.destroy();
+      }
+
+      // Crear nueva instancia
+      this.backgroundPanel = new BackgroundPanel({
+        container: container,
+        onChange: (props) => {
+          this.applyBackgroundToElement(props);
+        }
+      });
+
+      // TODO: Parsear background actual del elemento y establecer layers
+      // Por ahora comenzamos con un panel vacío
+    }
+  }
+
+  /**
+   * Aplicar background al elemento seleccionado
+   */
+  private applyBackgroundToElement(props: BackgroundProperties): void {
+    if (!this.selectedElement) return;
+
+    // Filtrar solo capas visibles
+    const visibleLayers = props.layers.filter(l => l.visible);
+    
+    if (visibleLayers.length === 0) {
+      // Limpiar background si no hay capas visibles
+      this.selectedElement.style.backgroundImage = '';
+      this.selectedElement.style.backgroundRepeat = '';
+      this.selectedElement.style.backgroundBlendMode = '';
+      this.selectedElement.style.backgroundSize = '';
+      this.selectedElement.style.backgroundPosition = '';
+      return;
+    }
+
+    // Construir arrays de propiedades CSS compuestas
+    const images: string[] = [];
+    const repeats: string[] = [];
+    const blendModes: string[] = [];
+    const sizes: string[] = [];
+    const positions: string[] = [];
+
+    visibleLayers.forEach(layer => {
+      if (layer.type === 'image') {
+        // Capa de imagen
+        images.push(layer.imageUrl ? `url(${layer.imageUrl})` : 'none');
+        repeats.push(layer.imageRepeat || 'no-repeat');
+        blendModes.push('normal');
+        sizes.push(layer.imageSize || 'cover');
+        positions.push(layer.imagePosition || 'center');
+      } else {
+        // Capa de color/gradiente desde AdvancedColorPicker
+        images.push(layer.backgroundImage || 'transparent');
+        repeats.push(layer.backgroundRepeat || 'no-repeat');
+        blendModes.push(layer.backgroundBlendMode || 'normal');
+        sizes.push(layer.backgroundSize || 'auto');
+        positions.push(layer.backgroundPosition || '0% 0%');
+      }
+    });
+
+    // Aplicar todas las propiedades CSS compuestas
+    this.selectedElement.style.backgroundImage = images.join(', ');
+    this.selectedElement.style.backgroundRepeat = repeats.join(', ');
+    this.selectedElement.style.backgroundBlendMode = blendModes.join(', ');
+    this.selectedElement.style.backgroundSize = sizes.join(', ');
+    this.selectedElement.style.backgroundPosition = positions.join(', ');
+  }
+
+  /**
    * Aplicar transformaciones al elemento seleccionado
    */
   private applyTransformToElement(props: TransformProperties): void {
@@ -967,6 +1332,19 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
             </div>
           </div>
           
+          <!-- Positioning Panel -->
+          <div class="accordion-item" data-panel="positioning">
+            <button class="accordion-header" data-accordion-trigger="positioning">
+              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Positioning</span>
+            </button>
+            <div class="accordion-content" data-accordion-content="positioning">
+              <div id="positioning-panel-container"></div>
+            </div>
+          </div>
+          
           <!-- Spacing Panel -->
           <div class="accordion-item" data-panel="spacing">
             <button class="accordion-header" data-accordion-trigger="spacing">
@@ -977,6 +1355,45 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
             </button>
             <div class="accordion-content" data-accordion-content="spacing">
               <div id="spacing-panel-container"></div>
+            </div>
+          </div>
+          
+          <!-- Border Panel -->
+          <div class="accordion-item" data-panel="border">
+            <button class="accordion-header" data-accordion-trigger="border">
+              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Border</span>
+            </button>
+            <div class="accordion-content" data-accordion-content="border">
+              <div id="border-panel-container"></div>
+            </div>
+          </div>
+          
+          <!-- Display Panel -->
+          <div class="accordion-item" data-panel="display">
+            <button class="accordion-header" data-accordion-trigger="display">
+              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Display</span>
+            </button>
+            <div class="accordion-content" data-accordion-content="display">
+              <div id="display-panel-container"></div>
+            </div>
+          </div>
+          
+          <!-- Background Panel -->
+          <div class="accordion-item" data-panel="background">
+            <button class="accordion-header" data-accordion-trigger="background">
+              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Background</span>
+            </button>
+            <div class="accordion-content" data-accordion-content="background">
+              <div id="background-panel-container"></div>
             </div>
           </div>
           
@@ -1003,6 +1420,32 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
             </button>
             <div class="accordion-content" data-accordion-content="filters">
               <div id="filters-panel-container"></div>
+            </div>
+          </div>
+          
+          <!-- Text Shadow Panel -->
+          <div class="accordion-item" data-panel="text-shadow">
+            <button class="accordion-header" data-accordion-trigger="text-shadow">
+              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Text shadow</span>
+            </button>
+            <div class="accordion-content" data-accordion-content="text-shadow">
+              <div id="text-shadow-panel-container"></div>
+            </div>
+          </div>
+          
+          <!-- Box Shadow Panel -->
+          <div class="accordion-item" data-panel="box-shadow">
+            <button class="accordion-header" data-accordion-trigger="box-shadow">
+              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span>Box shadow</span>
+            </button>
+            <div class="accordion-content" data-accordion-content="box-shadow">
+              <div id="box-shadow-panel-container"></div>
             </div>
           </div>
         </div>
