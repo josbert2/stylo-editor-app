@@ -32,6 +32,8 @@ import './DisplayPanel.css';
 import { BackgroundPanel, type BackgroundProperties } from './BackgroundPanel';
 import './BackgroundPanel.css';
 import './InspectorAccordion.css';
+import { ElementSelector, type ElementDefinition } from './ElementSelector';
+import './ElementSelector.css';
 import { tailwindClasses } from '../utils/tailwindClasses';
 import { injectTailwindClass } from '../utils/tailwindJIT';
 import { tailwindColors } from '../utils/tailwindColorsData';
@@ -61,6 +63,7 @@ export class InspectorPanel extends EventEmitter<StyloEditorEvents> {
   private borderPanel: BorderPanel | null = null;
   private displayPanel: DisplayPanel | null = null;
   private backgroundPanel: BackgroundPanel | null = null;
+  private elementSelector: ElementSelector | null = null;
   
   // Tailwind: Rastrear clases deshabilitadas (exist en la lista pero no aplicadas al elemento)
   private disabledTailwindClasses: Set<string> = new Set();
@@ -458,6 +461,7 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
     
     // Inicializar todos los paneles si la pestaña Design está activa
     if (this.activeTab === 'design' && this.selectedElement) {
+      this.initializeElementSelector();
       this.initializeTransformPanel();
       this.initializePositioningPanel();
       this.initializeSpacingPanel();
@@ -516,6 +520,166 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
         }
       });
     });
+  }
+
+  /**
+   * Inicializar ElementSelector
+   */
+  private initializeElementSelector(): void {
+    // Destruir instancia anterior si existe
+    if (this.elementSelector) {
+      this.elementSelector.destroy();
+      this.elementSelector = null;
+    }
+
+    // Crear contenedor flotante para el ElementSelector
+    const container = document.createElement('div');
+    container.className = 'element-selector-floating';
+    container.style.cssText = `
+      position: fixed;
+      display: none;
+      z-index: 10000;
+      max-width: 500px;
+      min-width: 400px;
+    `;
+    document.body.appendChild(container);
+
+    // Crear nueva instancia
+    this.elementSelector = new ElementSelector({
+      container: container,
+      onElementSelect: (element) => {
+        this.handleElementAdd(element);
+        // Cerrar dropdown después de seleccionar
+        container.style.display = 'none';
+      }
+    });
+
+    // Guardar referencia al contenedor para poder limpiarlo
+    (this.elementSelector as any)._floatingContainer = container;
+
+    // Cerrar dropdown al hacer clic fuera
+    const closeDropdown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!container.contains(target) && !target.closest('.stylo-add-button')) {
+        container.style.display = 'none';
+      }
+    };
+
+    // Usar setTimeout para evitar que el clic cierre inmediatamente
+    setTimeout(() => {
+      document.addEventListener('click', closeDropdown);
+    }, 0);
+
+    // Limpiar listener cuando se destruya el panel
+    this.elementSelector.on('destroy', () => {
+      document.removeEventListener('click', closeDropdown);
+    });
+  }
+
+  /**
+   * Manejar la adición de un nuevo elemento
+   */
+  private handleElementAdd(element: ElementDefinition): void {
+    if (!this.selectedElement) return;
+
+    // Si es duplicar elemento
+    if (element.tag === '') {
+      const cloned = this.selectedElement.cloneNode(true) as HTMLElement;
+      this.selectedElement.parentNode?.insertBefore(cloned, this.selectedElement.nextSibling);
+      console.log('Element duplicated');
+      return;
+    }
+
+    // Crear el nuevo elemento
+    const newElement = document.createElement(element.tag);
+    
+    // Configuración por defecto según el tipo
+    switch (element.tag) {
+      case 'div':
+        if (element.title.includes('Horizontal')) {
+          newElement.style.display = 'flex';
+          newElement.style.flexDirection = 'row';
+          newElement.style.gap = '10px';
+        } else if (element.title.includes('Vertical')) {
+          newElement.style.display = 'flex';
+          newElement.style.flexDirection = 'column';
+          newElement.style.gap = '10px';
+        }
+        newElement.textContent = 'Container';
+        break;
+      case 'p':
+        newElement.textContent = 'Paragraph text';
+        break;
+      case 'span':
+        newElement.textContent = 'Text';
+        break;
+      case 'a':
+        newElement.textContent = 'Link';
+        (newElement as HTMLAnchorElement).href = '#';
+        break;
+      case 'img':
+        (newElement as HTMLImageElement).src = 'https://via.placeholder.com/150';
+        (newElement as HTMLImageElement).alt = 'Image';
+        break;
+      case 'h1':
+      case 'h2':
+      case 'h3':
+      case 'h4':
+      case 'h5':
+      case 'h6':
+        newElement.textContent = element.title;
+        break;
+      case 'button':
+        newElement.textContent = 'Button';
+        break;
+      case 'input':
+        (newElement as HTMLInputElement).placeholder = 'Enter text...';
+        if (element.title.includes('Email')) {
+          (newElement as HTMLInputElement).type = 'email';
+        } else if (element.title.includes('Password')) {
+          (newElement as HTMLInputElement).type = 'password';
+        } else if (element.title.includes('Number')) {
+          (newElement as HTMLInputElement).type = 'number';
+        } else if (element.title.includes('Date')) {
+          (newElement as HTMLInputElement).type = 'date';
+        } else if (element.title.includes('Color')) {
+          (newElement as HTMLInputElement).type = 'color';
+        } else if (element.title.includes('Range')) {
+          (newElement as HTMLInputElement).type = 'range';
+        } else if (element.title.includes('Checkbox')) {
+          (newElement as HTMLInputElement).type = 'checkbox';
+        } else if (element.title.includes('Radio')) {
+          (newElement as HTMLInputElement).type = 'radio';
+        } else if (element.title.includes('Submit')) {
+          (newElement as HTMLInputElement).type = 'submit';
+          (newElement as HTMLInputElement).value = 'Submit';
+        } else {
+          (newElement as HTMLInputElement).type = 'text';
+        }
+        break;
+      case 'textarea':
+        (newElement as HTMLTextAreaElement).placeholder = 'Enter text...';
+        (newElement as HTMLTextAreaElement).rows = 4;
+        break;
+      case 'ul':
+      case 'ol':
+        for (let i = 0; i < 3; i++) {
+          const li = document.createElement('li');
+          li.textContent = `Item ${i + 1}`;
+          newElement.appendChild(li);
+        }
+        break;
+    }
+
+    // Agregar estilos básicos si no tiene
+    if (!newElement.style.padding && ['div', 'section', 'header', 'footer', 'nav', 'article'].includes(element.tag)) {
+      newElement.style.padding = '10px';
+    }
+
+    // Insertar el elemento después del elemento seleccionado
+    this.selectedElement.parentNode?.insertBefore(newElement, this.selectedElement.nextSibling);
+    
+    console.log(`Element ${element.tag} added`);
   }
 
   /**
@@ -1317,21 +1481,23 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
           </div>
         </div>
         
-        <!-- Collapsible Sections -->
-        <div class="inspector-accordion">
+        <!-- Fixed Panels (Always Visible) -->
+        <div class="inspector-fixed-panels" style="margin-bottom: 16px;">
           <!-- Transform Panel -->
-          <div class="accordion-item" data-panel="transform">
-            <button class="accordion-header" data-accordion-trigger="transform">
-              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-              <span>Transform</span>
-            </button>
-            <div class="accordion-content" data-accordion-content="transform">
-              <div id="transform-panel-container"></div>
-            </div>
+          <div class="fixed-panel" data-panel="transform" style="margin-bottom: 12px;">
+            <h4 style="margin: 0 0 8px 0; color: #4AEDFF; font-size: 13px; font-weight: 600;">Transform</h4>
+            <div id="transform-panel-container"></div>
           </div>
           
+          <!-- Spacing Panel -->
+          <div class="fixed-panel" data-panel="spacing" style="margin-bottom: 12px;">
+            <h4 style="margin: 0 0 8px 0; color: #4AEDFF; font-size: 13px; font-weight: 600;">Spacing</h4>
+            <div id="spacing-panel-container"></div>
+          </div>
+        </div>
+        
+        <!-- Collapsible Sections -->
+        <div class="inspector-accordion">
           <!-- Positioning Panel -->
           <div class="accordion-item" data-panel="positioning">
             <button class="accordion-header" data-accordion-trigger="positioning">
@@ -1342,19 +1508,6 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
             </button>
             <div class="accordion-content" data-accordion-content="positioning">
               <div id="positioning-panel-container"></div>
-            </div>
-          </div>
-          
-          <!-- Spacing Panel -->
-          <div class="accordion-item" data-panel="spacing">
-            <button class="accordion-header" data-accordion-trigger="spacing">
-              <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-              <span>Spacing</span>
-            </button>
-            <div class="accordion-content" data-accordion-content="spacing">
-              <div id="spacing-panel-container"></div>
             </div>
           </div>
           
@@ -2653,6 +2806,12 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
   public updateSelectedElement(element: HTMLElement | null, elementInfo: ElementInfo | null): void {
     this.selectedElement = element;
     this.elementInfo = elementInfo;
+    
+    // Si el panel está minimizado y tenemos un elemento, expandirlo
+    if (this.isMinimized && element) {
+      this.expand();
+    }
+    
     this.renderContent();
   }
 
@@ -2767,9 +2926,51 @@ l-3 60 52 23 c60 26 71 44 48 79 -14 22 -24 25 -74 25 -37 0 -86 -10 -140 -29z"/>
   }
 
   /**
+   * Abrir el ElementSelector (mostrar el dropdown debajo del botón +)
+   */
+  public openElementSelector(): void {
+    if (!this.elementSelector) return;
+
+    // Buscar el botón add del inspector
+    const addButton = document.querySelector('.stylo-add-button') as HTMLElement;
+    if (!addButton) return;
+
+    // Obtener contenedor flotante
+    const container = (this.elementSelector as any)._floatingContainer as HTMLElement;
+    if (!container) return;
+
+    // Obtener posición del botón +
+    const buttonRect = addButton.getBoundingClientRect();
+    
+    // Posicionar el dropdown debajo del botón +
+    const top = buttonRect.bottom + 8; // 8px de espacio
+    const left = buttonRect.left - 180; // Centrado aproximado (considerando que el dropdown tiene ~400px)
+    
+    container.style.top = `${top}px`;
+    container.style.left = `${Math.max(10, left)}px`;
+    container.style.display = 'block';
+
+    // Focus en el input de búsqueda si existe
+    const searchInput = container.querySelector('.element-selector-search') as HTMLInputElement;
+    if (searchInput) {
+      setTimeout(() => searchInput.focus(), 100);
+    }
+  }
+
+  /**
    * Destruir el panel
    */
   override destroy(): void {
+    // Limpiar ElementSelector y su contenedor flotante
+    if (this.elementSelector) {
+      const floatingContainer = (this.elementSelector as any)._floatingContainer as HTMLElement;
+      if (floatingContainer && floatingContainer.parentNode) {
+        floatingContainer.parentNode.removeChild(floatingContainer);
+      }
+      this.elementSelector.destroy();
+      this.elementSelector = null;
+    }
+    
     // Limpiar HTMLNavigator
     if (this.htmlNavigator) {
       this.htmlNavigator.destroy();

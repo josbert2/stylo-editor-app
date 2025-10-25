@@ -1,5 +1,18 @@
 /* Element Inspector Actions Tooltip Styles */
 
+@keyframes pulse-selected {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.6), 
+                0 0 30px rgba(239, 68, 68, 0.5),
+                inset 0 0 0 3px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.8), 
+                0 0 50px rgba(239, 68, 68, 0.7),
+                inset 0 0 0 4px rgba(239, 68, 68, 0.5);
+  }
+}
+
 @keyframes fadeInScale {
   from {
     opacity: 0;
@@ -39,13 +52,13 @@
   flex-direction: row;
   gap: 6px;
   padding: 8px;
-  background: rgba(30, 30, 35, 0.98);
-  border: 1px solid rgba(74, 237, 255, 0.4);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+ 
   z-index: 9999;
   animation: fadeInScale 0.2s ease-out;
   pointer-events: auto;
+  --bg-container: hsl(0deg 0% 10%);
+  background: var(--bg-container);
+  border-radius: 48px;
 }
 
 .stylo-action-btn {
@@ -100,4 +113,58 @@
 .stylo-action-btn svg {
   width: 14px;
   height: 14px;
+}
+
+/* Add Button (Separado del tooltip) */
+.stylo-add-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: rgba(74, 237, 255, 0.15);
+  border: 1.5px solid rgba(74, 237, 255, 0.4);
+  border-radius: 50%;
+  color: rgba(74, 237, 255, 1);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(74, 237, 255, 0.2);
+}
+
+.stylo-add-button:hover {
+  background: rgba(74, 237, 255, 0.25);
+  border-color: rgba(74, 237, 255, 0.7);
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(74, 237, 255, 0.4);
+}
+
+.stylo-add-button:active {
+  transform: scale(0.95);
+}
+
+.stylo-add-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Guidelines (Líneas guía) */
+.css-pro-guidelines,
+#css-pro-guidelines-hover,
+#css-pro-guidelines-selected {
+  pointer-events: none !important;
+}
+
+.css-pro-guidelines svg,
+#css-pro-guidelines-hover svg,
+#css-pro-guidelines-selected svg {
+  pointer-events: none !important;
+}
+
+.css-pro-guidelines line,
+#css-pro-guidelines-hover line,
+#css-pro-guidelines-selected line {
+  stroke-dasharray: 5, 5;
+  transition: all 0.15s ease;
+  vector-effect: non-scaling-stroke;
 }

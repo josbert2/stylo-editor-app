@@ -7,8 +7,12 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
   private isEnabled: boolean = false;
   private selectedElement: HTMLElement | null = null;
   private hoveredElement: HTMLElement | null = null;
-  private overlay: HTMLElement | null = null;
+  private overlayHover: HTMLElement | null = null;
+  private overlaySelected: HTMLElement | null = null;
   private actionsTooltip: HTMLElement | null = null;
+  private addButton: HTMLElement | null = null;
+  private guidelinesHover: HTMLElement | null = null;
+  private guidelinesSelected: HTMLElement | null = null;
   private excludeSelectors: string[] = [];
   
   // Guardar referencias a los handlers para poder removerlos correctamente
@@ -29,11 +33,21 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
     // Agregar selectores de elementos del editor que NO deben ser seleccionables
     this.excludeSelectors = [
       '#stylo-editor-container',
+      '#css-pro-guidelines-hover',
+      '#css-pro-guidelines-selected',
+      '.css-pro-guidelines',
       '.stylo-editor-sidebar',
       '.stylo-inspector-panel',
       '.inspector-panel',
       '.stylo-actions-tooltip',
       '.stylo-action-btn',
+      '.stylo-add-button',
+      '.element-selector-floating',
+      '.element-selector-dropdown',
+      '.element-selector-search',
+      '.element-selector-list',
+      '.element-selector-item',
+      '.css-pro-element',
       '.background-panel',
       '.spacing-panel',
       '.typography-panel',
@@ -49,32 +63,116 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
       '.bg-preset-actions-tooltip',
       '[class*="stylo-"]',
       '[class*="inspector-"]',
-      '[id*="stylo-"]'
+      '[id*="stylo-"]',
+      '[class*="element-selector"]',
+      '[class*="guideline-"]'
     ];
     
     this.createOverlay();
+    this.createGuidelines();
     this.createActionsTooltip();
+    this.createAddButton();
     this.bindEvents();
   }
 
   /**
-   * Crear el overlay para resaltar elementos
+   * Crear los overlays para resaltar elementos
    */
   private createOverlay(): void {
-    if (this.overlay) return;
+    // Overlay para HOVER (cyan)
+    if (!this.overlayHover) {
+      this.overlayHover = document.createElement('div');
+      this.overlayHover.className = 'stylo-overlay-hover';
+      this.overlayHover.style.cssText = `
+        position: fixed;
+        pointer-events: none;
+        border: 2px solid #4AEDFF;
+        background: rgba(74, 237, 255, 0.1);
+        z-index: 9997;
+        transition: all 0.1s ease;
+        display: none;
+        box-sizing: border-box;
+      `;
+      document.body.appendChild(this.overlayHover);
+    }
     
-    this.overlay = document.createElement('div');
-    this.overlay.style.cssText = `
-      position: fixed;
-      pointer-events: none;
-      border: 2px solid #4AEDFF;
-      background: rgba(74, 237, 255, 0.1);
-      z-index: 9998;
-      transition: all 0.1s ease;
-      display: none;
-      box-sizing: border-box;
-    `;
-    document.body.appendChild(this.overlay);
+    // Overlay para SELECCIÓN (rojo)
+    if (!this.overlaySelected) {
+      this.overlaySelected = document.createElement('div');
+      this.overlaySelected.className = 'stylo-overlay-selected';
+      this.overlaySelected.style.cssText = `
+        position: fixed;
+        pointer-events: none;
+        border: 4px solid #ef4444;
+        background: rgba(239, 68, 68, 0.15);
+        z-index: 9998;
+        transition: all 0.15s ease;
+        display: none;
+        box-sizing: border-box;
+      `;
+      document.body.appendChild(this.overlaySelected);
+    }
+  }
+
+  /**
+   * Crear las líneas guía (guidelines) SVG
+   */
+  private createGuidelines(): void {
+    // Guidelines para HOVER (cyan)
+    if (!this.guidelinesHover) {
+      this.guidelinesHover = document.createElement('div');
+      this.guidelinesHover.id = 'css-pro-guidelines-hover';
+      this.guidelinesHover.className = 'css-pro-guidelines';
+      this.guidelinesHover.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9996;
+        display: none;
+      `;
+      
+      this.guidelinesHover.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" class="css-pro-element">
+          <line x1="0" y1="0" x2="0" y2="100" class="guideline-left" stroke="#4AEDFF" stroke-width="0.1" opacity="0.5"></line>
+          <line x1="100" y1="0" x2="100" y2="100" class="guideline-right" stroke="#4AEDFF" stroke-width="0.1" opacity="0.5"></line>
+          <line x1="0" y1="0" x2="100" y2="0" class="guideline-top" stroke="#4AEDFF" stroke-width="0.1" opacity="0.5"></line>
+          <line x1="0" y1="100" x2="100" y2="100" class="guideline-bottom" stroke="#4AEDFF" stroke-width="0.1" opacity="0.5"></line>
+        </svg>
+      `;
+      
+      document.body.appendChild(this.guidelinesHover);
+    }
+    
+    // Guidelines para SELECCIÓN (rojo)
+    if (!this.guidelinesSelected) {
+      this.guidelinesSelected = document.createElement('div');
+      this.guidelinesSelected.id = 'css-pro-guidelines-selected';
+      this.guidelinesSelected.className = 'css-pro-guidelines';
+      this.guidelinesSelected.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9997;
+        display: none;
+      `;
+      
+      this.guidelinesSelected.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" class="css-pro-element">
+          <line x1="0" y1="0" x2="0" y2="100" class="guideline-left" stroke="#ef4444" stroke-width="0.15" opacity="0.8"></line>
+          <line x1="100" y1="0" x2="100" y2="100" class="guideline-right" stroke="#ef4444" stroke-width="0.15" opacity="0.8"></line>
+          <line x1="0" y1="0" x2="100" y2="0" class="guideline-top" stroke="#ef4444" stroke-width="0.15" opacity="0.8"></line>
+          <line x1="0" y1="100" x2="100" y2="100" class="guideline-bottom" stroke="#ef4444" stroke-width="0.15" opacity="0.8"></line>
+        </svg>
+      `;
+      
+      document.body.appendChild(this.guidelinesSelected);
+    }
   }
 
   /**
@@ -91,10 +189,7 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
       flex-direction: row;
       gap: 6px;
       padding: 8px;
-      background: rgba(30, 30, 35, 0.98);
-      border: 1px solid rgba(74, 237, 255, 0.4);
-      border-radius: 8px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    
       z-index: 9999;
       animation: fadeInScale 0.2s ease-out;
     `;
@@ -134,6 +229,39 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
     
     document.body.appendChild(this.actionsTooltip);
     this.attachTooltipListeners();
+  }
+
+  /**
+   * Crear el botón de agregar elemento (separado del tooltip)
+   */
+  private createAddButton(): void {
+    if (this.addButton) return;
+    
+    this.addButton = document.createElement('button');
+    this.addButton.className = 'stylo-add-button';
+    this.addButton.title = 'Add Element';
+    this.addButton.style.cssText = `
+      position: fixed;
+      display: none;
+      z-index: 9999;
+      animation: fadeInScale 0.2s ease-out;
+    `;
+    
+    this.addButton.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    `;
+    
+    this.addButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (this.selectedElement) {
+        this.emit('element:add', { element: this.selectedElement });
+      }
+    });
+    
+    document.body.appendChild(this.addButton);
   }
 
   /**
@@ -178,24 +306,32 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
    * Mostrar el tooltip de acciones cerca del elemento seleccionado
    */
   private showActionsTooltip(element: HTMLElement): void {
-    if (!this.actionsTooltip) return;
+    if (!this.actionsTooltip || !this.addButton) return;
     
     const rect = element.getBoundingClientRect();
     const tooltipHeight = 50; // Altura aproximada del tooltip
     const spacing = 10;
     
     // Posicionar arriba del elemento si hay espacio, sino debajo
-    let top = rect.top - tooltipHeight - spacing;
-    if (top < 0) {
-      top = rect.bottom + spacing;
+    let tooltipTop = rect.top - tooltipHeight - spacing;
+    if (tooltipTop < 0) {
+      tooltipTop = rect.bottom + spacing;
     }
     
-    // Centrar horizontalmente
-    const left = rect.left + (rect.width / 2) - 120; // 120 = mitad del ancho aproximado del tooltip
+    // Centrar horizontalmente el tooltip
+    const tooltipLeft = rect.left + (rect.width / 2) - 120; // 120 = mitad del ancho aproximado del tooltip
     
-    this.actionsTooltip.style.top = `${top}px`;
-    this.actionsTooltip.style.left = `${Math.max(10, left)}px`;
+    this.actionsTooltip.style.top = `${tooltipTop}px`;
+    this.actionsTooltip.style.left = `${Math.max(10, tooltipLeft)}px`;
     this.actionsTooltip.style.display = 'flex';
+    
+    // Posicionar el botón Add arriba y centrado en el elemento
+    const addButtonTop = rect.top - 50; // 50px arriba del elemento
+    const addButtonLeft = rect.left + (rect.width / 2) - 20; // Centrado (20 = mitad del botón)
+    
+    this.addButton.style.top = `${Math.max(10, addButtonTop)}px`;
+    this.addButton.style.left = `${Math.max(10, addButtonLeft)}px`;
+    this.addButton.style.display = 'flex';
   }
 
   /**
@@ -204,6 +340,9 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
   private hideActionsTooltip(): void {
     if (this.actionsTooltip) {
       this.actionsTooltip.style.display = 'none';
+    }
+    if (this.addButton) {
+      this.addButton.style.display = 'none';
     }
   }
 
@@ -297,20 +436,21 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
       target = target.parentElement as HTMLElement;
     }
     
-    // Verificar si el elemento debe ser excluido
-    if (this.shouldExcludeElement(target)) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
+    // Si no hay target válido, salir
+    if (!target) return;
     
+    // Verificar si el elemento debe ser excluido
+    if (this.shouldExcludeElement(target)) return;
+
     // Buscar el elemento más específico en el punto del click
     const elementAtPoint = this.getElementAtPoint(event.clientX, event.clientY);
-    if (elementAtPoint && !this.shouldExcludeElement(elementAtPoint)) {
-      this.selectElement(elementAtPoint);
-    } else {
-      this.selectElement(target);
+    const elementToSelect = elementAtPoint && !this.shouldExcludeElement(elementAtPoint) ? elementAtPoint : target;
+    
+    // Solo prevenir el comportamiento predeterminado si vamos a seleccionar un elemento válido
+    if (elementToSelect) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.selectElement(elementToSelect);
     }
   }
 
@@ -380,21 +520,28 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
   }
 
   /**
-   * Obtener el elemento más específico en un punto dado
-   * Esto ayuda a seleccionar el elemento correcto incluso si hay overlays
+   * Obtener el elemento en un punto específico (x, y)
    */
   private getElementAtPoint(x: number, y: number): HTMLElement | null {
-    // Ocultar temporalmente el overlay para obtener el elemento debajo
-    const originalDisplay = this.overlay?.style.display;
-    if (this.overlay) {
-      this.overlay.style.display = 'none';
+    // Ocultar temporalmente los overlays para obtener el elemento debajo
+    const originalHoverDisplay = this.overlayHover?.style.display;
+    const originalSelectedDisplay = this.overlaySelected?.style.display;
+    
+    if (this.overlayHover) {
+      this.overlayHover.style.display = 'none';
+    }
+    if (this.overlaySelected) {
+      this.overlaySelected.style.display = 'none';
     }
     
     const element = document.elementFromPoint(x, y) as HTMLElement;
     
-    // Restaurar el overlay
-    if (this.overlay && originalDisplay) {
-      this.overlay.style.display = originalDisplay;
+    // Restaurar los overlays
+    if (this.overlayHover && originalHoverDisplay) {
+      this.overlayHover.style.display = originalHoverDisplay;
+    }
+    if (this.overlaySelected && originalSelectedDisplay) {
+      this.overlaySelected.style.display = originalSelectedDisplay;
     }
     
     return element;
@@ -418,8 +565,11 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
       }
     }
     
-    // Excluir elementos del overlay
-    if (this.overlay && (element === this.overlay || this.overlay.contains(element))) {
+    // Excluir elementos de los overlays
+    if (this.overlayHover && (element === this.overlayHover || this.overlayHover.contains(element))) {
+      return true;
+    }
+    if (this.overlaySelected && (element === this.overlaySelected || this.overlaySelected.contains(element))) {
       return true;
     }
     
@@ -435,39 +585,161 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
    * Actualizar la posición y estilo del overlay
    */
   private updateOverlay(element: HTMLElement, isSelected: boolean = false): void {
-    if (!this.overlay || !element) return;
+    if (!element) return;
 
     const rect = element.getBoundingClientRect();
     
-    // Diferentes estilos para hover vs seleccionado
-    const borderColor = isSelected ? '#10b981' : '#4AEDFF';
-    const backgroundColor = isSelected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(74, 237, 255, 0.1)';
-    const borderWidth = isSelected ? '3px' : '2px';
-    const boxShadow = isSelected ? '0 0 0 2px rgba(16, 185, 129, 0.4), inset 0 0 0 2px rgba(16, 185, 129, 0.2)' : 'none';
-    
-    this.overlay.style.cssText = `
-      position: fixed;
-      pointer-events: none !important;
-      border: ${borderWidth} solid ${borderColor};
-      background: ${backgroundColor};
-      z-index: 9998;
-      transition: all 0.15s ease;
-      display: block;
-      top: ${rect.top}px;
-      left: ${rect.left}px;
-      width: ${rect.width}px;
-      height: ${rect.height}px;
-      box-shadow: ${boxShadow};
-      box-sizing: border-box;
-    `;
+    if (isSelected) {
+      // Actualizar overlay SELECCIONADO (rojo)
+      if (this.overlaySelected) {
+        this.overlaySelected.style.cssText = `
+          position: fixed;
+          pointer-events: none !important;
+          border: 4px solid #ef4444;
+          background: rgba(239, 68, 68, 0.15);
+          z-index: 9998;
+          transition: all 0.15s ease;
+          display: block;
+          top: ${rect.top}px;
+          left: ${rect.left}px;
+          width: ${rect.width}px;
+          height: ${rect.height}px;
+          box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.6), 
+                      0 0 30px rgba(239, 68, 68, 0.5),
+                      inset 0 0 0 3px rgba(239, 68, 68, 0.4);
+          box-sizing: border-box;
+          animation: pulse-selected 2s ease-in-out infinite;
+        `;
+      }
+      this.updateGuidelinesSelected(rect);
+    } else {
+      // Actualizar overlay HOVER (cyan)
+      if (this.overlayHover) {
+        this.overlayHover.style.cssText = `
+          position: fixed;
+          pointer-events: none !important;
+          border: 2px solid #4AEDFF;
+          background: rgba(74, 237, 255, 0.1);
+          z-index: 9997;
+          transition: all 0.15s ease;
+          display: block;
+          top: ${rect.top}px;
+          left: ${rect.left}px;
+          width: ${rect.width}px;
+          height: ${rect.height}px;
+          box-shadow: 0 0 10px rgba(74, 237, 255, 0.3);
+          box-sizing: border-box;
+        `;
+      }
+      this.updateGuidelinesHover(rect);
+    }
   }
 
   /**
-   * Ocultar el overlay
+   * Actualizar las líneas guía para el elemento en HOVER
+   */
+  private updateGuidelinesHover(rect: DOMRect): void {
+    if (!this.guidelinesHover) return;
+    
+    const svg = this.guidelinesHover.querySelector('svg');
+    if (!svg) return;
+    
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Calcular posiciones en porcentaje para el viewBox
+    const leftPercent = (rect.left / windowWidth) * 100;
+    const rightPercent = (rect.right / windowWidth) * 100;
+    const topPercent = (rect.top / windowHeight) * 100;
+    const bottomPercent = (rect.bottom / windowHeight) * 100;
+    
+    // Actualizar líneas
+    const leftLine = svg.querySelector('.guideline-left') as SVGLineElement;
+    const rightLine = svg.querySelector('.guideline-right') as SVGLineElement;
+    const topLine = svg.querySelector('.guideline-top') as SVGLineElement;
+    const bottomLine = svg.querySelector('.guideline-bottom') as SVGLineElement;
+    
+    if (leftLine) {
+      leftLine.setAttribute('x1', leftPercent.toString());
+      leftLine.setAttribute('x2', leftPercent.toString());
+    }
+    
+    if (rightLine) {
+      rightLine.setAttribute('x1', rightPercent.toString());
+      rightLine.setAttribute('x2', rightPercent.toString());
+    }
+    
+    if (topLine) {
+      topLine.setAttribute('y1', topPercent.toString());
+      topLine.setAttribute('y2', topPercent.toString());
+    }
+    
+    if (bottomLine) {
+      bottomLine.setAttribute('y1', bottomPercent.toString());
+      bottomLine.setAttribute('y2', bottomPercent.toString());
+    }
+    
+    // Mostrar guidelines hover
+    this.guidelinesHover.style.display = 'block';
+  }
+
+  /**
+   * Actualizar las líneas guía para el elemento SELECCIONADO
+   */
+  private updateGuidelinesSelected(rect: DOMRect): void {
+    if (!this.guidelinesSelected) return;
+    
+    const svg = this.guidelinesSelected.querySelector('svg');
+    if (!svg) return;
+    
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Calcular posiciones en porcentaje para el viewBox
+    const leftPercent = (rect.left / windowWidth) * 100;
+    const rightPercent = (rect.right / windowWidth) * 100;
+    const topPercent = (rect.top / windowHeight) * 100;
+    const bottomPercent = (rect.bottom / windowHeight) * 100;
+    
+    // Actualizar líneas
+    const leftLine = svg.querySelector('.guideline-left') as SVGLineElement;
+    const rightLine = svg.querySelector('.guideline-right') as SVGLineElement;
+    const topLine = svg.querySelector('.guideline-top') as SVGLineElement;
+    const bottomLine = svg.querySelector('.guideline-bottom') as SVGLineElement;
+    
+    if (leftLine) {
+      leftLine.setAttribute('x1', leftPercent.toString());
+      leftLine.setAttribute('x2', leftPercent.toString());
+    }
+    
+    if (rightLine) {
+      rightLine.setAttribute('x1', rightPercent.toString());
+      rightLine.setAttribute('x2', rightPercent.toString());
+    }
+    
+    if (topLine) {
+      topLine.setAttribute('y1', topPercent.toString());
+      topLine.setAttribute('y2', topPercent.toString());
+    }
+    
+    if (bottomLine) {
+      bottomLine.setAttribute('y1', bottomPercent.toString());
+      bottomLine.setAttribute('y2', bottomPercent.toString());
+    }
+    
+    // Mostrar guidelines selected
+    this.guidelinesSelected.style.display = 'block';
+  }
+
+  /**
+   * Ocultar el overlay y guidelines hover (las selected se quedan)
    */
   private hideOverlay(): void {
-    if (this.overlay) {
-      this.overlay.style.display = 'none';
+    if (this.overlayHover) {
+      this.overlayHover.style.display = 'none';
+    }
+    if (this.guidelinesHover) {
+      this.guidelinesHover.style.display = 'none';
     }
   }
 
@@ -587,6 +859,13 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
     this.selectedElement = null;
     this.hideOverlay();
     this.hideActionsTooltip();
+    // Ocultar overlay y guidelines seleccionadas
+    if (this.overlaySelected) {
+      this.overlaySelected.style.display = 'none';
+    }
+    if (this.guidelinesSelected) {
+      this.guidelinesSelected.style.display = 'none';
+    }
   }
 
   /**
@@ -632,18 +911,38 @@ export class ElementInspector extends EventEmitter<StyloEditorEvents> {
     this.disable();
     this.unbindEvents();
     
-    if (this.overlay && this.overlay.parentNode) {
-      this.overlay.parentNode.removeChild(this.overlay);
+    if (this.overlayHover && this.overlayHover.parentNode) {
+      this.overlayHover.parentNode.removeChild(this.overlayHover);
+    }
+    
+    if (this.overlaySelected && this.overlaySelected.parentNode) {
+      this.overlaySelected.parentNode.removeChild(this.overlaySelected);
+    }
+    
+    if (this.guidelinesHover && this.guidelinesHover.parentNode) {
+      this.guidelinesHover.parentNode.removeChild(this.guidelinesHover);
+    }
+    
+    if (this.guidelinesSelected && this.guidelinesSelected.parentNode) {
+      this.guidelinesSelected.parentNode.removeChild(this.guidelinesSelected);
     }
     
     if (this.actionsTooltip && this.actionsTooltip.parentNode) {
       this.actionsTooltip.parentNode.removeChild(this.actionsTooltip);
     }
     
+    if (this.addButton && this.addButton.parentNode) {
+      this.addButton.parentNode.removeChild(this.addButton);
+    }
+    
     this.selectedElement = null;
     this.hoveredElement = null;
-    this.overlay = null;
+    this.overlayHover = null;
+    this.overlaySelected = null;
+    this.guidelinesHover = null;
+    this.guidelinesSelected = null;
     this.actionsTooltip = null;
+    this.addButton = null;
     
     super.destroy();
   }

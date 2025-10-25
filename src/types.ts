@@ -186,6 +186,7 @@ export interface AssetManagerOptions {
 export interface StyloEditorEvents {
   'element:selected': HTMLElement;
   'element:hover': HTMLElement | null;
+  'element:add': { element: HTMLElement };
   'inspector:toggle': boolean;
   'styles:updated': StyleValues;
   'tab:changed': TabType;

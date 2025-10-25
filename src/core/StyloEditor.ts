@@ -64,6 +64,10 @@ export class StyloEditor extends EventEmitter<StyloEditorEvents> {
       this.handleElementSelected(element);
     });
 
+    this.elementInspector.on('element:add', (data: { element: HTMLElement }) => {
+      this.inspectorPanel.openElementSelector();
+    });
+
     this.elementInspector.on('inspector:toggle', (enabled: boolean) => {
       this.handleInspectorToggle(enabled);
     });
@@ -106,11 +110,11 @@ export class StyloEditor extends EventEmitter<StyloEditorEvents> {
     });
 
     this.inspectorPanel.on('asset-manager:opened', () => {
-      this.emit('asset-manager:opened');
+      this.emit('asset-manager:opened', undefined);
     });
 
     this.inspectorPanel.on('asset-manager:closed', () => {
-      this.emit('asset-manager:closed');
+      this.emit('asset-manager:closed', undefined);
     });
   }
 
